@@ -68,7 +68,7 @@ const static float hann(int const n,int const M){
     return 0.5 - 0.5 * cos(2*M_PI*n/(M-1));
 }
 
-int make_hann_window(float *window, int max_count){
+void make_hann_window(float *window, int max_count){
 	//apply to the entire fft (MAX_BINS)
 	for (int i = 0; i < max_count; i++)
 		window[i] = hann(i, max_count);	 

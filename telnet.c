@@ -20,7 +20,6 @@
 #include "sdr_ui.h"
 
 void telnet_open(char *server);
-int telnet_write(char *text);
 void telnet_close();
 
 static int telnet_sock = -1;
@@ -119,8 +118,6 @@ unsigned long poll_ntp(){
 }
 */
 void *telnet_thread_function(void *server){
-  struct sockaddr_storage serverStorage;
-  socklen_t addr_size;
 	struct sockaddr_in serverAddr;
 	char buff[200], host[100], port[7];
 
@@ -156,18 +153,18 @@ void *telnet_thread_function(void *server){
 	sprintf(buff, "Finding %s:%s\n", host, port);
 	write_console(FONT_TELNET, buff);
 
-  memset(serverAddr.sin_zero, '\0', sizeof serverAddr.sin_zero);  
-  serverAddr.sin_family = AF_INET;
-  serverAddr.sin_port = htons(atoi(port));
-  serverAddr.sin_addr.s_addr = get_address(host); 
+  	memset(serverAddr.sin_zero, '\0', sizeof serverAddr.sin_zero);  
+  	serverAddr.sin_family = AF_INET;
+  	serverAddr.sin_port = htons(atoi(port));
+  	serverAddr.sin_addr.s_addr = get_address(host); 
 
 	sprintf(buff, "Opening %s:%s\n", host, port);
 	write_console(FONT_TELNET, buff);
 
 	telnet_sock = socket(AF_INET, SOCK_STREAM, 0);
-  if (connect(telnet_sock, 
+  	if (connect(telnet_sock, 
 			(struct sockaddr *)&serverAddr, sizeof(serverAddr)) < 0) {
-		printf("Telnet: failed to connect to %s\n", server);
+		printf("Telnet: failed to connect to %s\n", (const char *)server);
 		write_console(FONT_TELNET, "Failed to open telnet, check hostname and port?\n");
 		close(telnet_sock);
 		telnet_sock = -1;
@@ -221,11 +218,12 @@ void *telnet_thread_function(void *server){
 	}
 	close(telnet_sock);
 	telnet_sock = -1;	
+	return NULL;
 }
 
-int telnet_write(char *text){
+void telnet_write(char *text){
 	if (telnet_sock < 0){
-		return -1;
+		return;
 	}
 	char nl[] = "\n";
 	send (telnet_sock, text, strlen(text), 0);

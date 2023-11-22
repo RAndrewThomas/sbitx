@@ -1,0 +1,28 @@
+sbitx v2.0
+sqlite3 opening returned 0
+Checking for valid NTP time ..... not found.
+Initialized the waterfall
+rx_pitch set to 600
+bridge compesation = 100
+*Error: field[#kbd_] not found. Check for typo?
+#Remote is listening
+Reading rtc...RTC time is : year:2000 month:1 day:3 hour:4 min:4 sec:26
+time_delta = 946868664
+rtc julian: 946868666 736259232
+done!
+Checking for valid NTP time ..... not found.
+Initialized the waterfall
+rx_pitch set to 600
+bridge compesation = 100
+*Error: field[#kbd_] not found. Check for typo?
+#Remote is listening
+Reading rtc...RTC time is : year:2000 month:1 day:3 hour:4 min:4 sec:26
+time_delta = 946868664
+rtc julian: 946868666 736259232
+done!
+trying login with passkey : [123]
+ft8
+CW1
+CQWWRUN
+RUN
+SP

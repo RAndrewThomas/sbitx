@@ -234,30 +234,6 @@ int32_t i2cbb_write_byte_data(uint8_t i2c_address, uint8_t command, uint8_t valu
     return -1;
 }
 
-// This executes the SMBus “read byte” protocol, returning negative errno else a data byte received from the device.
-int32_t i2cbb_read_byte_data(uint8_t i2c_address, uint8_t command) {
-
-    uint8_t address = (i2c_address << 1) | 0;
-    if (!i2c_write_byte(1, 0, address)) {
-
-        if (!i2c_write_byte(0, 0, command)) {
-
-            address = (i2c_address << 1) | 1;
-            if (!i2c_write_byte(1, 0, address)) {
-                return i2c_read_byte(1, 1);
-            }
-            else
-                i2c_stop_cond();
-        }
-        else
-            i2c_stop_cond();
-    }
-    else
-        i2c_stop_cond();
-
-    return -1;
-}
-
 // This executes the SMBus “block write” protocol, returning negative errno else zero on success.
 int32_t i2cbb_write_i2c_block_data(uint8_t i2c_address, uint8_t command, uint8_t length,
         const uint8_t * values) {
@@ -299,21 +275,6 @@ int32_t i2cbb_write_i2c_block_data(uint8_t i2c_address, uint8_t command, uint8_t
 int32_t i2cbb_read_i2c_block_data(uint8_t i2c_address, uint8_t command, uint8_t length,
         uint8_t* values) {
 	uint8_t address = (i2c_address << 1) | 0;
-/*
-	//static int i2c_write_byte(int send_start, int send_stop, uint8_t byte) 
-	if (i2c_write_byte(1, 0, address)){ 
-		i2c_stop_cond();
-		printf("i2cbb.c:writing address failed\n");
-		return -1;
-	}
-
-  if (i2c_write_byte(0, 0, command)){
-		i2c_stop_cond();
-		printf("i2cbb.c:writing command failed\n");
-		return -1;
-	}
-	i2c_stop_cond();
-*/
 	address = (i2c_address << 1) | 1;
 	if (i2c_write_byte(1, 0, address)){ 
 		i2c_stop_cond();
@@ -323,8 +284,8 @@ int32_t i2cbb_read_i2c_block_data(uint8_t i2c_address, uint8_t command, uint8_t 
 
 	//static uint8_t i2c_read_byte(int nack, int send_stop) 
 	uint8_t i = 0;
-  for (i = 0; i < length - 1; i++) 
-  	values[i] = i2c_read_byte(0,0);
+    for (i = 0; i < length - 1; i++) 
+  	    values[i] = i2c_read_byte(0,0);
 	values[i] = i2c_read_byte(1,1);
 
 	i2c_stop_cond();

@@ -22,10 +22,8 @@
 #include "si5351.h"
 #include "ini.h"
 
-char audio_card[32];
+static char audio_card[32];
 static int tx_shift = 512;
-
-FILE *pf_debug = NULL;
 
 //this is for processing FT8 decodes 
 //unsigned int	wallclock = 0;
@@ -41,21 +39,24 @@ FILE *pf_debug = NULL;
 #define SBITX_DE (0)
 #define SBITX_V2 (1)
 
-int sbitx_version = SBITX_V2;
+static int sbitx_version = SBITX_V2;
 int fwdpower, vswr;
+
 float fft_bins[MAX_BINS]; // spectrum ampltiudes  
 int spectrum_plot[MAX_BINS];
-fftw_complex *fft_spectrum;
-fftw_plan plan_spectrum;
-float spectrum_window[MAX_BINS];
-void set_rx1(int frequency);
-void tr_switch(int tx_on);
 
-fftw_complex *fft_out;		// holds the incoming samples in freq domain (for rx as well as tx)
-fftw_complex *fft_in;			// holds the incoming samples in time domain (for rx as well as tx) 
-fftw_complex *fft_m;			// holds previous samples for overlap and discard convolution 
-fftw_plan plan_fwd, plan_tx;
-int bfo_freq = 40035000;
+static fftw_complex *fft_spectrum;
+static fftw_plan plan_spectrum;
+static float spectrum_window[MAX_BINS];
+static void set_rx1(int frequency);
+static void tr_switch(int tx_on);
+
+static fftw_complex *fft_out;		// holds the incoming samples in freq domain (for rx as well as tx)
+static fftw_complex *fft_in;			// holds the incoming samples in time domain (for rx as well as tx) 
+static fftw_complex *fft_m;			// holds previous samples for overlap and discard convolution 
+static fftw_plan plan_fwd;
+
+static int bfo_freq = 40035000;
 int freq_hdr = -1;
 
 static double volume 	= 100.0;
@@ -66,7 +67,6 @@ static int tx_gain = 100;
 static int tx_compress = 0;
 static double spectrum_speed = 0.3;
 static int in_tx = 0;
-static int rx_tx_ramp = 0;
 static int sidetone = 2000000000;
 struct vfo tone_a, tone_b; //these are audio tone generators
 static int tx_use_line = 0;
@@ -84,10 +84,8 @@ static int in_calibration = 1; // this turns off alc, clipping et al
 #define MUTE_MAX 6 
 static int mute_count = 50;
 
-FILE *pf_record;
-int16_t record_buffer[1024];
-int32_t modulation_buff[MAX_BINS];
-
+static FILE *pf_record;
+static int16_t record_buffer[1024];
 
 /* the power gain of the tx varies widely from 
 band to band. these data structures help in flattening 
@@ -100,7 +98,7 @@ struct power_settings {
 	double scale;
 };
 
-struct power_settings band_power[] ={
+static struct power_settings band_power[] ={
 	{ 3500000,  4000000, 37, 0.002},
 	{ 7000000,  7300009, 40, 0.0015},
 	{10000000, 10200000, 35, 0.0019},
@@ -116,26 +114,19 @@ struct power_settings band_power[] ={
 #define TUNING_SHIFT (0)
 #define MDS_LEVEL (-135)
 
-struct Queue qremote;
+static struct Queue qremote;
 
 void radio_tune_to(u_int32_t f){
 	if (rx_list->mode == MODE_CW)
-  	si5351bx_setfreq(2, f + bfo_freq - 24000 + TUNING_SHIFT - rx_pitch);
+	  	si5351bx_setfreq(2, f + bfo_freq - 24000 + TUNING_SHIFT - rx_pitch);
 	else if (rx_list->mode == MODE_CWR)
-  	si5351bx_setfreq(2, f + bfo_freq - 24000 + TUNING_SHIFT + rx_pitch);
+  		si5351bx_setfreq(2, f + bfo_freq - 24000 + TUNING_SHIFT + rx_pitch);
 	else
-  	si5351bx_setfreq(2, f + bfo_freq - 24000 + TUNING_SHIFT);
-
-//  printf("Setting radio rx_pitch %d\n", rx_pitch);
+  		si5351bx_setfreq(2, f + bfo_freq - 24000 + TUNING_SHIFT);
 }
 
 void fft_init(){
-	int mem_needed;
-
-	//printf("initializing the fft\n");
 	fflush(stdout);
-
-	mem_needed = sizeof(fftw_complex) * MAX_BINS;
 
 	fft_m = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * MAX_BINS/2);
 	fft_in = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * MAX_BINS);
@@ -167,11 +158,6 @@ void fft_reset_m_bins(){
 	memset(fft_spectrum, 0, sizeof(fftw_complex) * MAX_BINS);
 	memset(tx_list->fft_time, 0, sizeof(fftw_complex) * MAX_BINS);
 	memset(tx_list->fft_freq, 0, sizeof(fftw_complex) * MAX_BINS);
-/*	for (int i= 0; i < MAX_BINS/2; i++){
-		__real__ fft_m[i]  = 0.0;
-		__imag__ fft_m[i]  = 0.0;
-	}
-*/
 }
 
 int mag2db(double mag){
@@ -311,7 +297,6 @@ FILE *wav_start_writing(const char* path)
 
 void wav_record(int32_t *samples, int count){
 	int16_t *w;
-	int32_t *s;
 	int i = 0, j = 0;
 	int decimation_factor = 96000 / 12000; 
 
@@ -385,8 +370,9 @@ struct rx *add_tx(int frequency, short mode, int bpf_low, int bpf_high){
 	//the modems drive the tx at 12000 Hz, this has to be upconverted
 	//to the radio's sampling rate
 
-  r->next = tx_list;
-  tx_list = r;
+  	r->next = tx_list;
+  	tx_list = r;
+  	return 0;
 }
 
 struct rx *add_rx(int frequency, short mode, int bpf_low, int bpf_high){
@@ -416,13 +402,13 @@ struct rx *add_rx(int frequency, short mode, int bpf_low, int bpf_high){
 		r->agc_speed = 300;
 		r->agc_threshold = -60;
 		r->agc_loop = 0;
-    r->signal_avg = 0;
+    	r->signal_avg = 0;
 	}
 	else {
 		r->agc_speed = 300;
 		r->agc_threshold = -60;
 		r->agc_loop = 0;
-    r->signal_avg = 0;
+    	r->signal_avg = 0;
 	}
 
 	// the modems are driven by 12000 samples/sec
@@ -430,7 +416,7 @@ struct rx *add_rx(int frequency, short mode, int bpf_low, int bpf_high){
 
 	r->next = rx_list;
 	rx_list = r;
-
+	return 0;
 }
 
 
@@ -598,8 +584,6 @@ void rx_process(int32_t *input_rx,  int32_t *input_mic,
 	agc2(r);
 	
 	//STEP 9: send the output back to where it needs to go
-	int is_digital = 0;
-
 	if (rx_list->output == 0){
 		for (i= 0; i < MAX_BINS/2; i++){
 			int32_t sample;
@@ -627,10 +611,10 @@ void rx_process(int32_t *input_rx,  int32_t *input_mic,
 void read_power(){
 	uint8_t response[4];
 	int16_t vfwd, vref;
-	char buff[20];
 
 	if (!in_tx)
 		return;
+
 	if(i2cbb_read_i2c_block_data(0x8, 0, 4, response) == -1)
 		return;
 
@@ -879,15 +863,10 @@ void setup_oscillators(){
   si5351_reset();
 }
 
-
 static int hw_init_index = 0;
-static int hw_settings_handler(void* user, const char* section, 
-            const char* name, const char* value)
-{
-  char cmd[1000];
-  char new_value[200];
-		
 
+static int hw_settings_handler(void* user, const char* section, const char* name, const char* value)
+{
 	if (!strcmp(name, "f_start"))
 		band_power[hw_init_index].f_start = atoi(value);
 	if (!strcmp(name, "f_stop"))
@@ -897,6 +876,7 @@ static int hw_settings_handler(void* user, const char* section,
 
 	if (!strcmp(name, "bfo_freq"))
 		bfo_freq = atoi(value);
+	return 0;
 }
 
 static void read_hw_ini(){
@@ -980,7 +960,6 @@ void calibrate_band_power(struct power_settings *b){
 }
 
 static void save_hw_settings(){
-	static int last_save_at = 0;
 	char file_path[200];	//dangerous, find the MAX_PATH and replace 200 with it
 
 	char *path = getenv("HOME");
@@ -1022,6 +1001,7 @@ void *calibration_thread_function(void *server){
 	tx_drive = old_tx_drive;
 	save_hw_settings();
 	printf("*Finished band power calibrations\n");
+	return 0;
 }
 
 void tx_cal(){

@@ -126,7 +126,7 @@ struct filter {
 
 struct filter *filter_new(int input_length, int impulse_length);
 int filter_tune(struct filter *f, float const low,float const high,float const kaiser_beta);
-int make_hann_window(float *window, int max_count);
+void make_hann_window(float *window, int max_count);
 void filter_print(struct filter *f);
 
 
@@ -231,7 +231,6 @@ time_t time_sbitx();
 #define CW_IAMBICB 2	
 #define CW_KBD 3
 
-
 int key_poll();
 int key_poll2();
 int get_cw_delay();
@@ -247,7 +246,6 @@ int	get_wpm();
 void ft8_setmode(int config);
 
 void telnet_open(char *server);
-int telnet_write(char *text);
 void telnet_close();
 double agc2(struct rx *r);
 FILE *wav_start_writing(const char* path);

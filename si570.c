@@ -14,13 +14,12 @@ static	unsigned char dco_reg[13];
 #define RFREQ_37_32_MASK	0x3f
 #define FDCO_MIN	4800000000.0
 #define FDCO_MAX	5670000000.0
-//#define fxtal 114292961
 static unsigned int selected_n1;
 static unsigned int selected_hs;
 static uint64_t selected_rf = 0;
 static unsigned long	selected_freq = 0;
 
-int fxtal = 114264401;
+static int fxtal = 114264401;
 
 void si570_dumpregs(){
 	for (int i = 7; i <= 12; i++)
@@ -97,15 +96,13 @@ How it works
 
 */
 void si570_freq(unsigned long f){
-  unsigned int i, j, hs, n1;
+  unsigned int hs, n1;
   float f_dco;
 
-//	printf("si570: %ld\n", f);
 	for (hs = 11; hs >= 4; hs--){
 		if (hs == 8 || hs == 10)	//hs can't take values of 8 and 10 as per datasheet
 			continue;
 
-		// n1 = fdco / (hs * fout), we are taking care of not rounding out the significant bits	
 		n1 = (long)(FDCO_MIN/hs)/f;
 		if (!n1 || (n1 & 1))					//n1 should not be zero or odd
 			n1++;	
@@ -123,7 +120,7 @@ void si570_freq(unsigned long f){
 				//fill up the registers
 				dco_reg[7] 	= (selected_hs - 4) << 5;
 				dco_reg[7] 	= dco_reg[7] | ((selected_n1 - 1) >> 2);
-				dco_reg[8] 	= ((selected_n1 - 1) & 0x3) << 6 | (selected_rf >> 32) & RFREQ_37_32_MASK;
+				dco_reg[8] 	= ((selected_n1 - 1) & 0x3) << 6 | ((selected_rf >> 32) & RFREQ_37_32_MASK);
 				dco_reg[9] 	= (selected_rf >> 24) & 0xff;
 				dco_reg[10] =	(selected_rf >> 16) & 0xff;
 				dco_reg[11] = (selected_rf >> 8) & 0xff;
