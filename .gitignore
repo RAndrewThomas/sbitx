@@ -1,3 +1,2 @@
-*.o
-gen_ft8
-decode_ft8
+data/hw_settings.ini
+data/user_settings.ini
