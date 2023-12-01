@@ -167,7 +167,7 @@ void *telnet_thread_function(void *server){
 	telnet_sock = socket(AF_INET, SOCK_STREAM, 0);
   if (connect(telnet_sock, 
 			(struct sockaddr *)&serverAddr, sizeof(serverAddr)) < 0) {
-		printf("Telnet: failed to connect to %s\n", server);
+		printf("Telnet: failed to connect to %s\n", (char *)server);
 		write_console(FONT_TELNET, "Failed to open telnet, check hostname and port?\n");
 		close(telnet_sock);
 		telnet_sock = -1;

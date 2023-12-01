@@ -62,7 +62,7 @@ static void do_login(struct mg_connection *c, char *key){
 	}
 	
 	sprintf(session_cookie, "%x", rand());
-	char response[100];
+	char response[1000];
 	sprintf(response, "login %s", session_cookie);
 	web_respond(c, response);	
 	get_updates(c, 1);
@@ -90,7 +90,7 @@ static void get_audio(struct mg_connection *c){
 
 static void get_logs(struct mg_connection *c, char *args){
 	char logbook_path[200];
-	char row_response[1000], row[1000];
+	char row_response[1500], row[1000];
 	char query[100];
 	int	row_id;
 

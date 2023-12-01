@@ -280,7 +280,7 @@ int32_t i2cbb_write_i2c_block_data(uint8_t i2c_address, uint8_t command, uint8_t
 
             if (!errors)
                 return 0;
-						printf("i2cbb: write byte failed at index %d\n", i);
+						printf("i2cbb: write byte failed at index %d\n", (int)i);
         }
         else{
             i2c_stop_cond();

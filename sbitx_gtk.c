@@ -778,7 +778,7 @@ int set_field(char *id, char *value){
 		//search the current text in the selection
 		prev = NULL;
 		if (debug)
-			printf("field selection [%s]\n");
+			printf("field selection [%s]\n", f->selection);
 		strcpy(b, f->selection);
 		p = strtok(b, "/");
 		if (debug)
@@ -2102,8 +2102,8 @@ void dump_ui(){
 		fprintf(pf, "type:%d\n", f->value_type);
 		fprintf(pf, "font:%d\n", f->font_index);
 		fprintf(pf, "selection:%s\n", f->selection);
-		fprintf(pf, "min:%d\n", f->min);
-		fprintf(pf, "max:%d\n", f->max);
+		fprintf(pf, "min:%ld\n", f->min);
+		fprintf(pf, "max:%ld\n", f->max);
 		fprintf(pf, "step:%d\n", f->step);
 	}
 	fclose(pf);
@@ -2310,7 +2310,7 @@ void set_operating_freq(int dial_freq, char *response){
 	struct field *vfo_b = get_field("#vfo_b_freq");
 	struct field *rit_delta = get_field("#rit_delta");
 
-	char freq_request[30];
+	char freq_request[300];
  
 	if (!strcmp(rit->value, "ON")){
 		if (!in_tx)
@@ -2425,7 +2425,7 @@ void call_wipe(){
 }
 
 void update_titlebar(){
-	char buff[100];
+	char buff[1000];
 
 	time_t now = time_sbitx();
 	struct tm *tmp = gmtime(&now);
@@ -2505,7 +2505,7 @@ void set_filter_high_low(int hz){
 	set_field("r1:high", buff);
 }
 int do_status(struct field *f, cairo_t *gfx, int event, int a, int b, int c){
-	char buff[100];
+	char buff[1000];
 
 	if (event == FIELD_DRAW){
 		time_t now = time_sbitx();
@@ -2734,7 +2734,7 @@ int do_tuning(struct field *f, cairo_t *gfx, int event, int a, int b, int c){
 		sprintf(f->value, "%d",  v);
 		tuning_step = temp_tuning_step;
 		//send the new frequency to the sbitx core
-		char buff[100];
+		char buff[1000];
 		//sprintf(buff, "%s=%s", f->cmd, f->value);
 		sprintf(buff, "%s %s", f->label, f->value);
 		do_control_action(buff);
@@ -3644,7 +3644,7 @@ void set_radio_mode(char *mode){
 	sprintf(request, "r1:mode=%s", umode);
 	sdr_request(request, response);
 	if (strcmp(response, "ok")){
-		printf("mode %d: unavailable\n", umode);
+		printf("mode %s: unavailable\n", umode);
 		return;
 	}
 	int new_bandwidth = 3000;
@@ -4286,7 +4286,7 @@ void cmd_exec(char *cmd){
 	}
 	args[++j] = 0;
 
-	char response[100];
+	char response[1000];
 
 	if (!strcmp(exec, "FT8")){
 		ft8_process(args, FT8_START_QSO);
