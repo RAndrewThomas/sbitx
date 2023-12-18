@@ -405,8 +405,9 @@ static int sbitx_ft8_decode(float *signal, int num_samples, bool is_ft8)
 
   //timestamp the packets
   //the time is shifted back by the time it took to capture these sameples
-  time_t	rawtime = (time_sbitx() / 15) * 15; //round to the earlier slot
+  time_t rawtime = (time_sbitx() / 15) * 15; //round to the earlier slot
   char time_str[20], response[100];
+
   struct tm *t = gmtime(&rawtime);
   sprintf(time_str, "%02d%02d%02d", t->tm_hour, t->tm_min, t->tm_sec);
 
@@ -500,6 +501,8 @@ static int sbitx_ft8_decode(float *signal, int num_samples, bool is_ft8)
       ++num_decoded;
 
       char buff[1000];
+
+      // write the decoded message to console
       sprintf(buff, "%s %3d %3d %-4.0f ~  %s\n", time_str,
               cand->score, cand->snr, freq_hz, message.text);
 
@@ -518,6 +521,7 @@ static int sbitx_ft8_decode(float *signal, int num_samples, bool is_ft8)
 
   monitor_free(&mon);
 
+    write_console(FONT_FT8_RX, "\n");
   return n_decodes;
 }
 
