@@ -1151,10 +1151,12 @@ void write_to_remote_app(int style, char *text) {
 }
 
 void write_console(int style, char *text) {
-  char directory[200];	//dangerous, find the MAX_PATH and replace 200 with it
-  char *path = getenv("HOME");
-  strcpy(directory, path);
-  strcat(directory, "/sbitx/data/display_log.txt");
+  char directory[400];	// unwise but mitigated, should find the MAX_PATH and replace 400 with it
+  char *home = getenv("HOME");
+  char *subpath = "/sbitx/data/display_log.txt";
+
+  strncpy(directory, home, 398 - sizeof(subpath));  // trunc path if nec, but don't overrun string
+  strcat (directory, subpath);
 
   web_write(style, text);
 
@@ -1446,7 +1448,8 @@ static int mode_id(const char *mode_str) {
 
 static void save_user_settings(int forced) {
   static int last_save_at = 0;
-  char file_path[200];	//dangerous, find the MAX_PATH and replace 200 with it
+  char full_path[400];	// unwise but mitigated, should find the MAX_PATH and replace 400 with it
+  char *subpath = "/sbitx/data/user_settings.ini";
 
   //attempt to save settings only if it has been 30 seconds since the
   //last time the settings were saved
@@ -1455,18 +1458,18 @@ static void save_user_settings(int forced) {
   if ((now < last_save_at + 30000 ||  !settings_updated) && forced == 0)
     return;
 
-  char *path = getenv("HOME");
-  strcpy(file_path, path);
-  strcat(file_path, "/sbitx/data/user_settings.ini");
+  char *home = getenv("HOME");
+  strncpy(full_path, home, 398 - sizeof(subpath));  // trunc path if nec, but don't overrun string
+  strcat (full_path, subpath);
 
   //copy the current freq settings to the currently selected vfo
   struct field *f_freq = get_field("r1:freq");
   struct field *f_vfo  = get_field("#vfo");
 
-  FILE *f = fopen(file_path, "w");
+  FILE *f = fopen(full_path, "w");
 
   if (!f) {
-    printf("Unable to save %s : %s\n", file_path, strerror(errno));
+    printf("Unable to save %s : %s\n", full_path, strerror(errno));
     return;
   }
 
@@ -4593,7 +4596,7 @@ void do_control_action(char *cmd) {
     change_band(request);
   }
   else if (!strcmp(request, "REC ON")) {
-    char fullpath[200];	//dangerous, find the MAX_PATH and replace 200 with it
+    char fullpath[400];	//dangerous, should find the MAX_PATH and replace 400 with it
 
     char *path = getenv("HOME");
     time(&record_start);
@@ -4731,7 +4734,7 @@ void cmd_exec(char *cmd) {
     utc_set(args, 1);
   }
   else if (!strcmp(exec, "logbook")) {
-    char fullpath[200];	//dangerous, find the MAX_PATH and replace 200 with it
+    char fullpath[400];	//dangerous, should find the MAX_PATH and replace 400 with it
     char *path = getenv("HOME");
     sprintf(fullpath, "mousepad %s/sbitx/data/logbook.txt", path);
     execute_app(fullpath);
@@ -4946,17 +4949,20 @@ int main( int argc, char* argv[] ) {
   set_field("r1:gain", "41");
   set_field("r1:volume", "85");
 
-  char directory[200];	//dangerous, find the MAX_PATH and replace 200 with it
-  char *path = getenv("HOME");
-  strcpy(directory, path);
-  strcat(directory, "/sbitx/data/user_settings.ini");
+  char full_path[400];	// unwise but mitigated, should find the MAX_PATH and replace 400 with it
+  char *usrpath = "/sbitx/data/user_settings.ini";
+  char *defpath = "/sbitx/data/default_settings.ini";
+  char *home = getenv("HOME");
 
-  if (ini_parse(directory, user_settings_handler, NULL) < 0) {
+  strncpy(full_path, home, 398 - sizeof(usrpath));  // trunc path if nec, but don't overrun string
+  strcat (full_path, usrpath);
+
+  if (ini_parse(full_path, user_settings_handler, NULL) < 0) {
     printf("Unable to load ~/sbitx/data/user_settings.ini\n"
            "Loading default.ini instead\n");
-    strcpy(directory, path);
-    strcat(directory, "/sbitx/data/default_settings.ini");
-    ini_parse(directory, user_settings_handler, NULL);
+    strncpy(full_path, home, 398 - sizeof(defpath));  // trunc path if nec, but don't overrun string
+    strcat (full_path, defpath);
+    ini_parse(full_path, user_settings_handler, NULL);
   }
 
   //the logger fields may have an unfinished qso details
