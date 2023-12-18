@@ -126,7 +126,7 @@ float palette[][3] = {
   {0.2, 0.2, 0.2}, // SPECTRUM_BANDWIDTH
   {0, 1, 0},       // COLOR_RX__PITCH
   {0.1, 0.1, 0.2}, // SELECTED_LINE
-  {0.1, 0.1, 0.2}, // COLOR_FIELD_SELECTED
+  {0.2, 0.2, 0.4}, // COLOR_FIELD_SELECTED
   {1, 0, 0},       // COLOR_TX_PITCH
 };
 
