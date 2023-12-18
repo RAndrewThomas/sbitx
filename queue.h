@@ -4,10 +4,10 @@ struct Queue
   int head;
   int tail;
   int  stall;
-	int *data;
-	unsigned int underflow;
-	unsigned int overflow;
-	unsigned int max_q;
+  int *data;
+  unsigned int underflow;
+  unsigned int overflow;
+  unsigned int max_q;
 };
 
 void q_init(struct Queue *p, int32_t length);
