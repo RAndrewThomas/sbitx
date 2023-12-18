@@ -80,6 +80,10 @@ int logbook_query(char *query, int from_id, char *result_file) {
 
   FILE *pf = fopen(output_path, "w");
 
+  // validate pf first
+  if(!pf)
+    return(-1);
+
   int rec = 0;
 
   while (sqlite3_step(stmt) == SQLITE_ROW) {
