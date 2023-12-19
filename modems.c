@@ -43,8 +43,6 @@ typedef float float32_t;
 
 #define QSO_STATE_73 5   //we are done anyway
 
-int qso_state = QSO_STATE_ZOMBIE;
-
 /*
   This file implements modems for :
   Fldigi: We use fldigi as a proxy for all the modems that it implements
@@ -70,19 +68,19 @@ static int current_mode = -1;
 static unsigned long millis_now = 0;
 
 /* ---- Base64 Encoding/Decoding Table --- */
-char b64[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+static const char b64[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
 /* decodeblock - decode 4 '6-bit' characters into 3 8-bit binary bytes */
-void decodeblock(unsigned char in[], char *clrstr) {
+static void decodeblock(unsigned char in[], char *clrstr, size_t clrstr_len) {
   unsigned char out[4];
   out[0] = in[0] << 2 | in[1] >> 4;
   out[1] = in[1] << 4 | in[2] >> 2;
   out[2] = in[2] << 6 | in[3] >> 0;
-  out[3] = '\0';
-  strncat(clrstr, out, sizeof(out));
+  out[3] = 0;
+  strncat(clrstr, (const char *) out, clrstr_len);
 }
 
-void b64_decode(char *b64src, char *clrdst) {
+static void b64_decode(char *b64src, char *clrdst, size_t clrdst_len) {
   int c, phase, i;
   unsigned char in[4];
   char *p;
@@ -95,7 +93,7 @@ void b64_decode(char *b64src, char *clrdst) {
     c = (int) b64src[i];
 
     if(c == '=') {
-      decodeblock(in, clrdst);
+      decodeblock(in, clrdst, clrdst_len);
       break;
     }
 
@@ -106,7 +104,7 @@ void b64_decode(char *b64src, char *clrdst) {
       phase = (phase + 1) % 4;
 
       if(phase == 0) {
-        decodeblock(in, clrdst);
+        decodeblock(in, clrdst, clrdst_len);
         in[0] = in[1] = in[2] = in[3] = 0;
       }
     }
@@ -161,18 +159,15 @@ void b64_encode(char *clrstr, char *b64dst) {
 An almost trivial xml, just enough to work fldigi
 */
 
-char fldigi_mode[100];
-long fldigi_retry_at = 0;
+static char fldigi_mode[100];
+static long fldigi_retry_at = 0;
+
 /*
 An almost trivial xml, just enough to work fldigi
 */
-
-int fldigi_call_i(char *action, int param, char *result) {
-  char buffer[10000], q[10000], xml[1000];
+static int fldigi_call_i(char *action, int param, char *result) {
+  char q[10000], xml[1000];
   struct sockaddr_in serverAddr;
-  struct sockaddr_storage serverStorage;
-  socklen_t addr_size;
-  struct timeval timeout;
 
   serverAddr.sin_family = AF_INET;
   serverAddr.sin_port = htons(7362);
@@ -180,11 +175,6 @@ int fldigi_call_i(char *action, int param, char *result) {
   memset(serverAddr.sin_zero, '\0', sizeof serverAddr.sin_zero);
 
   int fldigi_socket = socket(AF_INET, SOCK_STREAM, 0);
-  /*    timeout.tv_sec = 0;
-        timeout.tv_usec = 1000;
-        setsockopt(fldigi_socket, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof timeout);
-        setsockopt(fldigi_socket, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof timeout);
-  */
   *result = 0; //start with a null string so it is returned if nothing is read
 
   if (connect(fldigi_socket, (struct sockaddr *)&serverAddr, sizeof(serverAddr)) < 0) {
@@ -237,7 +227,7 @@ int fldigi_call_i(char *action, int param, char *result) {
     if (r) {
       *r = 0; //terminate the base64 at the end tag
       int len =  (strlen(p) * 6) / 8;
-      b64_decode(p, result);
+      b64_decode(p, result, sizeof(result));
       result[len] = 0;
     }
   }
@@ -249,12 +239,9 @@ int fldigi_call_i(char *action, int param, char *result) {
   return 0;
 }
 
-int fldigi_call(char *action, char *param, char *result) {
-  char buffer[10000], q[10000], xml[1000];
+static int fldigi_call(char *action, char *param, char *result) {
+  char q[10000], xml[1000];
   struct sockaddr_in serverAddr;
-  struct sockaddr_storage serverStorage;
-  socklen_t addr_size;
-  struct timeval timeout;
 
   serverAddr.sin_family = AF_INET;
   serverAddr.sin_port = htons(7362);
@@ -264,11 +251,6 @@ int fldigi_call(char *action, char *param, char *result) {
 
   int fldigi_socket = socket(AF_INET, SOCK_STREAM, 0);
 
-  /*    timeout.tv_sec = 0;
-  	timeout.tv_usec = 500;
-  	setsockopt(fldigi_socket, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof timeout);
-  	setsockopt(fldigi_socket, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof timeout);
-  */
   if (connect(fldigi_socket, (struct sockaddr *)&serverAddr, sizeof(serverAddr)) < 0) {
     //puts("unable to connect to the flidigi\n");
     close(fldigi_socket);
@@ -301,7 +283,6 @@ int fldigi_call(char *action, char *param, char *result) {
   int e = recv(fldigi_socket, buff, sizeof(buff), 0);
 
   if(e < 0) {
-//  puts("Unable to recv from fldigi");
     close(fldigi_socket);
     return -1;
   }
@@ -319,12 +300,12 @@ int fldigi_call(char *action, char *param, char *result) {
     if (r) {
       *r = 0; //terminate the base64 at the end tag
       int len =  (strlen(p) * 6) / 8;
-      b64_decode(p, result);
+      b64_decode(p, result, sizeof(result));
       result[len] = 0;
     }
   }
   //maybe it is not base64 encoded
-  else if (p = strstr(buff, "<value>")) {
+  else if ((p = strstr(buff, "<value>")) != NULL) {
     p += strlen("<value>");
     char *r = strchr(p, '<');
 
@@ -341,16 +322,12 @@ int fldigi_call(char *action, char *param, char *result) {
   return 0;
 }
 
-
 /*******************************************************
 **********      Modem dispatch routines          *******
 ********************************************************/
-int fldigi_in_tx = 0;
-static int rx_poll_count = 0;
-static int sps, deci, s_timer ;
+static int fldigi_in_tx = 0;
 
-
-void fldigi_read() {
+static void fldigi_read() {
   char buffer[10000];
 
   //poll only every 250msec
@@ -370,7 +347,7 @@ void fldigi_read() {
   fldigi_retry_at = millis() + 250;
 }
 
-void fldigi_set_mode(char *mode) {
+static void fldigi_set_mode(char *mode) {
   char buffer[1000];
 
   if (strcmp(fldigi_mode, mode)) {
@@ -381,7 +358,7 @@ void fldigi_set_mode(char *mode) {
   }
 }
 
-void fldigi_tx_more_data() {
+static void fldigi_tx_more_data() {
   char c;
 
   if (get_tx_data_byte(&c)) {
@@ -409,22 +386,15 @@ void modem_set_pitch(int pitch) {
   char response[1000];
 
   fldigi_call_i("modem.set_carrier", pitch, response);
-//  puts("fldigi modem.set_carrier error");
 }
 
 
-int last_pitch = 0;
-void modem_rx(int mode, int32_t *samples, int count) {
-  int i, j, k, l;
-  int32_t *s;
-  FILE *pf;
-  char buff[10000];
+static int last_pitch = 0;
 
+void modem_rx(int mode, int32_t *samples, int count) {
   if (get_pitch() != last_pitch
       && (mode == MODE_CW || mode == MODE_CWR || MODE_RTTY || MODE_PSK31))
     modem_set_pitch(get_pitch());
-
-  s = samples;
 
   switch(mode) {
   case MODE_FT8:
@@ -453,13 +423,6 @@ void modem_init() {
   cw_init();
   ft8_init();
   strcpy(fldigi_mode, "");
-
-  /*
- //for now, launch fldigi in the background, if not already running
-  int e = system("pidof -x fldigi > /dev/null");
-  if (e == 256)
-  system("fldigi -i 2>/dev/null &");
-  */
 }
 
 
@@ -481,7 +444,7 @@ void modem_poll(int mode) {
     int l;
 
     do {
-      int e = fldigi_call("rx.get_data", "", buffer);
+      fldigi_call("rx.get_data", "", buffer);
       l = strlen(buffer);
     } while(l > 0);
 

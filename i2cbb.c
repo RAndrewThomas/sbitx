@@ -328,21 +328,6 @@ int32_t i2cbb_write_i2c_block_data(uint8_t i2c_address, uint8_t command, uint8_t
 int32_t i2cbb_read_i2c_block_data(uint8_t i2c_address, uint8_t command, uint8_t length,
                                   uint8_t* values) {
   uint8_t address = (i2c_address << 1) | 0;
-  /*
-  	//static int i2c_write_byte(int send_start, int send_stop, uint8_t byte)
-  	if (i2c_write_byte(1, 0, address)){
-  		i2c_stop_cond();
-  		printf("i2cbb.c:writing address failed\n");
-  		return -1;
-  	}
-
-    if (i2c_write_byte(0, 0, command)){
-  		i2c_stop_cond();
-  		printf("i2cbb.c:writing command failed\n");
-  		return -1;
-  	}
-  	i2c_stop_cond();
-  */
   address = (i2c_address << 1) | 1;
 
   if (i2c_write_byte(1, 0, address)) {

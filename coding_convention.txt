@@ -22,3 +22,4 @@ main().
 
 7. Use printf to dump debug information and comment it out when adding to the production.
 
+8. use 'astyle -fp -s2' to conform to indent and whitespace style

@@ -15,16 +15,15 @@
 #include <fftw3.h>
 #include "sdr.h"
 #include "sdr_ui.h"
+#include "hamlib.h"
 
 static int welcome_socket = -1, data_socket = -1;
 #define MAX_DATA 1000
-char incoming_data[MAX_DATA];
-int incoming_ptr;
-
-void  hamlib_tx(int tx_on);
+static char incoming_data[MAX_DATA];
+static int incoming_ptr;
 
 //copied from gqrx on github
-static char dump_state_response[] =
+static const char dump_state_response[] =
   /* rigctl protocol version */
   "0\n"
   /* rigctl model */
@@ -86,26 +85,27 @@ static char dump_state_response[] =
   /* Bit field list of set parm */
   "0\n" /* RIG_PARM_NONE */;
 
-int check_cmd(char *cmd, char *token) {
+static int check_cmd(char *cmd, char *token) {
   if (strstr(cmd, token) == cmd)
     return 1;
   else
     return 0;
 }
 
-void send_response(char *response) {
+static void send_response(const char *response) {
   send(data_socket, response, strlen(response), 0);
   printf(" %s]\n", response);
 }
 
-int in_tx = 0;
-void send_freq() {
+static int in_tx = 0;
+
+static void send_freq() {
   char response[20];
   sprintf(response, "%ld\n", get_freq());
   send_response(response);
 }
 
-void hamlib_set_freq(char *f) {
+static void hamlib_set_freq(char *f) {
   long freq;
   char cmd[50];
 
@@ -117,12 +117,9 @@ void hamlib_set_freq(char *f) {
   send_response("RPRT 0\n");
   sprintf(cmd, "freq %ld", freq);
   cmd_exec(cmd);
-//	set_freq(freq);
 }
 
-
 void tx_control(int s) {
-  //printf("tx_control(%d)\n", s);
   if (s == 1) {
     in_tx = 1;
     hamlib_tx(in_tx);
@@ -201,10 +198,7 @@ void hamlib_handler(char *data, int len) {
 }
 
 void hamlib_start() {
-  char buffer[MAX_DATA];
   struct sockaddr_in serverAddr;
-  struct sockaddr_storage serverStorage;
-  socklen_t addr_size;
 
   welcome_socket = socket(PF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0);
 

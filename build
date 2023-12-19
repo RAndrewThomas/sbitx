@@ -3,6 +3,7 @@ F=$@
 WORKING_DIRECTORY=`pwd`
 #TUNE='-mcpu=cortex-a72+crypto -mfloat-abi=hard -mfpu=neon-fp-armv8 -mneon-for-64bits -mtune=cortex-a72 -O2'
 TUNE=''
+WARNS='-Waddress -Warray-bounds=1 -Wbool-compare -Wbool-operation -Wchar-subscripts -Wcomment -Wformat -Wformat-overflow -Wformat-truncation -Wint-in-bool-context -Wlogical-not-parentheses -Wmemset-elt-size -Wmemset-transposed-args -Wmissing-attributes -Wmultistatement-macros -Wnonnull -Wnonnull-compare -Wparentheses -Wreturn-type -Wsequence-point -Wsizeof-pointer-div -Wstrict-aliasing -Wstrict-overflow=1 -Wswitch -Wtautological-compare -Wtrigraphs -Wmaybe-uninitialized -Wuninitialized -Wunused-label -Wunused-value -Wunused-variable -Wimplicit-function-declaration -Wmisleading-indentation -Wmissing-braces -Wduplicate-decl-specifier -Wenum-compare -Wimplicit'
 echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
 date
 mkdir -p "/home/pi/sbitx/audio"
@@ -25,7 +26,7 @@ else
   VERSION=`grep VER sdr_ui.h|awk 'FNR==1{print $4}'|sed -e 's/"//g'`
   echo "compiling $F version $VERSION in $WORKING_DIRECTORY"
 fi
-gcc $TUNE -g -o $F \
+gcc $TUNE $WARNS -g -o $F \
 	 vfo.c si570.c sbitx_sound.c fft_filter.c  sbitx_gtk.c sbitx_utils.c \
     i2cbb.c si5351v2.c ini.c hamlib.c queue.c modems.c logbook.c \
 		modem_cw.c \

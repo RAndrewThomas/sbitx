@@ -20,7 +20,6 @@
 #include "sdr_ui.h"
 
 void telnet_open(char *server);
-int telnet_write(char *text);
 void telnet_close();
 
 static int telnet_sock = -1;
@@ -122,8 +121,6 @@ unsigned long poll_ntp(){
 }
 */
 void *telnet_thread_function(void *server) {
-  struct sockaddr_storage serverStorage;
-  socklen_t addr_size;
   struct sockaddr_in serverAddr;
   char buff[200], host[100], port[7];
 
@@ -176,7 +173,7 @@ void *telnet_thread_function(void *server) {
 
   if (connect(telnet_sock,
               (struct sockaddr *)&serverAddr, sizeof(serverAddr)) < 0) {
-    printf("Telnet: failed to connect to %s\n", (char *)server);
+    printf("Telnet: failed to connect to %s\n", (const char *)server);
     write_console(FONT_TELNET, "Failed to open telnet, check hostname and port?\n");
     close(telnet_sock);
     telnet_sock = -1;
@@ -231,18 +228,19 @@ void *telnet_thread_function(void *server) {
 
       *q = 0;
 
-//      printf("compressed [%s] to [%s]\n", buff, buff2);
+      //printf("compressed [%s] to [%s]\n", buff, buff2);
       write_console(FONT_TELNET, buff2);
     }
   }
 
   close(telnet_sock);
   telnet_sock = -1;
+  return NULL;
 }
 
-int telnet_write(char *text) {
+void telnet_write(char *text) {
   if (telnet_sock < 0) {
-    return -1;
+    return;
   }
 
   char nl[] = "\n";

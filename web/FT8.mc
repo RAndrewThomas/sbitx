@@ -4,16 +4,15 @@
 # # serial number for this QSO
 # {SENTRST}
 #
-F1 CQ,CQ * {GRIDSQUARE}
-F2 Call,! * {GRIDSQUARE}
-F3 Reply,! * {SENTRST} 
-F4 RReply,! * R{SENTRST} 
-F5 73,! * 73
-F6 Call,! * {GRIDSQUARE}
-F7 RRR,! * RRR
-F8 RR73,! * RR73
-F8 ,
-F9 ,
+F1 Call,! * {GRIDSQUARE}
+F2 Reply,! * -10 
+F3 73,! * 73
+F4  , 
+F5 CQ,CQ * {GRIDSQUARE}
+F6 -,-
+F7 Reply,! * -10 
+F8 RRR,! * RRR
+F9 RR73,! * RR73
 F10 ,
 F11 ,
-F12 ,
+F12 Log,{LOG}

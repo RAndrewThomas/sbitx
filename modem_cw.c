@@ -96,7 +96,7 @@ struct morse_tx {
   char *code;
 };
 
-struct morse_tx morse_tx_table[] = {
+static struct morse_tx morse_tx_table[] = {
   {'~', " "}, //dummy, a null character
   {' ', " "},
   {'a', ".-"},
@@ -152,7 +152,7 @@ struct morse_rx {
   char *code;
 };
 
-struct morse_rx morse_rx_table[] = {
+static struct morse_rx morse_rx_table[] = {
   {"~", " "}, //dummy, a null character
   {" ", " "},
   {"A", ".-"},
@@ -265,7 +265,6 @@ static int keydown_count = 0;			//counts down pause afer a keydown is finished
 static int keyup_count = 0;			//counts down how long a key is held down
 static float cw_envelope = 1;		//used to shape the envelope
 static int cw_tx_until = 0;			//delay switching to rx, expect more txing
-static int data_tx_until = 0;
 
 static char *symbol_next = NULL;
 pthread_t iambic_thread;
@@ -361,9 +360,8 @@ float cw_tx_get_sample() {
   // for now, updatw time and cw pitch
   if (!keydown_count && !keyup_count) {
     millis_now = millis();
-
-    if (cw_tone.freq_hz != get_pitch())
-      (&cw_tone, get_pitch(), 0);
+//		if (cw_tone.freq_hz != get_pitch())
+//			(&cw_tone, get_pitch(), 0);
   }
 
   uint8_t symbol_now = cw_read_key();
@@ -475,8 +473,9 @@ float cw_tx_get_sample() {
 
   // shape the cw keying
   if (keydown_count  > 0) {
-    if(cw_envelope < 0.999)
+    if(cw_envelope < 0.999) {
       cw_envelope = ((vfo_read(&cw_env) / FLOAT_SCALE) + 1) / 2;
+    }
 
     keydown_count--;
   }
@@ -539,7 +538,6 @@ static void cw_rx_match_letter(struct cw_decoder *p) {
     return;
   }
 
-  int len = p->next_symbol;
   int in_mark = 0;
   int total_ticks = 0;
   int min_dot = (p->dash_len / 6);
@@ -587,7 +585,6 @@ static void cw_rx_match_letter(struct cw_decoder *p) {
 
   //un-decoded phrases
   write_console(FONT_CW_RX, code);
-
 }
 
 static void cw_rx_add_symbol(struct cw_decoder *p, char symbol) {

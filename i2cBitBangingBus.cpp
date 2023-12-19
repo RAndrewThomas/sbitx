@@ -18,25 +18,16 @@ i2cBitBangingBus::i2cBitBangingBus(uint8_t pin_number_sda, uint8_t pin_number_sc
         PIN_SDA(pin_number_sda), PIN_SCL(pin_number_scl), sleepTimeNanos(sleepTimeNanos_), nanoSleepTime(), delayTicks(
                 delayTicks_), i2c_started(false)
 {
-    // Pull up setzen 50KΩ
-    // http://wiringpi.com/reference/core-functions/
-//    pullUpDnControl(PIN_SDA,PUD_OFF);
-//    pullUpDnControl(PIN_SCL,PUD_OFF);
-
     nanoSleepTime.tv_sec = 0;
     nanoSleepTime.tv_nsec = 1;
 
 }
-
-
 
 // I2C implementation is copied and pasted from wikipedia:
 // 
 // https://en.wikipedia.org/wiki/I%C2%B2C#Example_of_bit-banging_the_I.C2.B2C_master_protocol
 //
 //
-
-
 
 bool i2cBitBangingBus::read_SCL() // Set SCL as input and return current level of line, 0 or 1
 {
