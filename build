@@ -11,10 +11,9 @@ TUNE=''
 WARNS='-Waddress -Warray-bounds=1 -Wbool-compare -Wbool-operation -Wchar-subscripts -Wcomment -Wformat -Wformat-overflow -Wformat-truncation -Wint-in-bool-context -Wlogical-not-parentheses -Wmemset-elt-size -Wmemset-transposed-args -Wmissing-attributes -Wmultistatement-macros -Wnonnull -Wnonnull-compare -Wparentheses -Wreturn-type -Wsequence-point -Wsizeof-pointer-div -Wstrict-aliasing -Wstrict-overflow=1 -Wswitch -Wtautological-compare -Wtrigraphs -Wmaybe-uninitialized -Wuninitialized -Wunused-label -Wunused-value -Wunused-variable -Wimplicit-function-declaration -Wmisleading-indentation -Wmissing-braces -Wduplicate-decl-specifier -Wenum-compare -Wimplicit'
 echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
 date
-mkdir -p "/home/pi/sbitx/audio"
-mkdir -p "/home/pi/sbitx/data"
-#cd /home/pi/sbitx
-mkdir -p "/home/pi/sbitx/web"
+mkdir -p "./audio"
+mkdir -p "./data"
+mkdir -p "./web"
 
 if test -f "data/sbitx.db"; then
 	echo "database is intact"
