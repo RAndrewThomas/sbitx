@@ -1,5 +1,10 @@
 #!/bin/sh
 F=$@
+if [ "$F" = "" ]; then
+    echo "No build target provided"
+    echo "Assuming target is sbitx"
+    F=sbitx
+fi
 WORKING_DIRECTORY=`pwd`
 #TUNE='-mcpu=cortex-a72+crypto -mfloat-abi=hard -mfpu=neon-fp-armv8 -mneon-for-64bits -mtune=cortex-a72 -O2'
 TUNE=''
