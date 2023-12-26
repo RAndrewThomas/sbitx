@@ -148,22 +148,22 @@ struct font_style {
 static guint key_modifier = 0;
 
 static struct font_style font_table[] = {
-  {FONT_FIELD_LABEL, 0, 1, 1, "Mono", 14, CAIRO_FONT_WEIGHT_NORMAL, CAIRO_FONT_SLANT_NORMAL},
-  {FONT_FIELD_VALUE, 1, 1, 1, "Mono", 14, CAIRO_FONT_WEIGHT_NORMAL, CAIRO_FONT_SLANT_NORMAL},
-  {FONT_LARGE_FIELD, 0, 1, 1, "Mono", 14, CAIRO_FONT_WEIGHT_NORMAL, CAIRO_FONT_SLANT_NORMAL},
-  {FONT_LARGE_VALUE, 1, 1, 1, "Arial", 24, CAIRO_FONT_WEIGHT_NORMAL, CAIRO_FONT_SLANT_NORMAL},
-  {FONT_SMALL, 0, 1, 1, "Mono", 10, CAIRO_FONT_WEIGHT_NORMAL, CAIRO_FONT_SLANT_NORMAL},
-  {FONT_LOG, 1, 1, 1, "Mono", 11, CAIRO_FONT_WEIGHT_NORMAL, CAIRO_FONT_SLANT_NORMAL},
-  {FONT_FT8_RX, 0, 1, 0, "Mono", 11, CAIRO_FONT_WEIGHT_NORMAL, CAIRO_FONT_SLANT_NORMAL},
-  {FONT_FT8_TX, 1, 0.6, 0, "Mono", 11, CAIRO_FONT_WEIGHT_NORMAL, CAIRO_FONT_SLANT_NORMAL},
-  {FONT_SMALL_FIELD_VALUE, 1, 1, 1, "Mono", 11, CAIRO_FONT_WEIGHT_NORMAL, CAIRO_FONT_SLANT_NORMAL},
-  {FONT_CW_RX, 0, 1, 0, "Mono", 11, CAIRO_FONT_WEIGHT_NORMAL, CAIRO_FONT_SLANT_NORMAL},
-  {FONT_CW_TX, 1, 0.6, 0, "Mono", 11, CAIRO_FONT_WEIGHT_NORMAL, CAIRO_FONT_SLANT_NORMAL},
-  {FONT_FLDIGI_RX, 0, 1, 0, "Mono", 11, CAIRO_FONT_WEIGHT_NORMAL, CAIRO_FONT_SLANT_NORMAL},
-  {FONT_FLDIGI_TX, 1, 0.6, 0, "Mono", 11, CAIRO_FONT_WEIGHT_NORMAL, CAIRO_FONT_SLANT_NORMAL},
-  {FONT_TELNET, 0, 1, 0, "Mono", 11, CAIRO_FONT_WEIGHT_NORMAL, CAIRO_FONT_SLANT_NORMAL},
-  {FONT_FT8_QUEUED, 0.5, 0.5, 0.5, "Mono", 11, CAIRO_FONT_WEIGHT_NORMAL, CAIRO_FONT_SLANT_NORMAL},
-  {FONT_FT8_REPLY, 1, 0.6, 0, "Mono", 11, CAIRO_FONT_WEIGHT_NORMAL, CAIRO_FONT_SLANT_NORMAL},
+  {FONT_FIELD_LABEL,       0, 1,     1, "Mono",  14, CAIRO_FONT_WEIGHT_NORMAL, CAIRO_FONT_SLANT_NORMAL},
+  {FONT_FIELD_VALUE,       1, 1,     1, "Mono",  14, CAIRO_FONT_WEIGHT_NORMAL, CAIRO_FONT_SLANT_NORMAL},
+  {FONT_LARGE_FIELD,       0, 1,     1, "Mono",  14, CAIRO_FONT_WEIGHT_NORMAL, CAIRO_FONT_SLANT_NORMAL},
+  {FONT_LARGE_VALUE,       1, 1,     1, "Arial", 24, CAIRO_FONT_WEIGHT_NORMAL, CAIRO_FONT_SLANT_NORMAL},
+  {FONT_SMALL,             0, 1,     1, "Mono",  10, CAIRO_FONT_WEIGHT_NORMAL, CAIRO_FONT_SLANT_NORMAL},
+  {FONT_LOG,               1, 1,     1, "Mono",  11, CAIRO_FONT_WEIGHT_NORMAL, CAIRO_FONT_SLANT_NORMAL},
+  {FONT_FT8_RX,            0, 1,     0, "Mono",  11, CAIRO_FONT_WEIGHT_NORMAL, CAIRO_FONT_SLANT_NORMAL},
+  {FONT_FT8_TX,            1, 0.6,   0, "Mono",  11, CAIRO_FONT_WEIGHT_NORMAL, CAIRO_FONT_SLANT_NORMAL},
+  {FONT_SMALL_FIELD_VALUE, 1, 1,     1, "Mono",  11, CAIRO_FONT_WEIGHT_NORMAL, CAIRO_FONT_SLANT_NORMAL},
+  {FONT_CW_RX,             0, 1,     0, "Mono",  11, CAIRO_FONT_WEIGHT_NORMAL, CAIRO_FONT_SLANT_NORMAL},
+  {FONT_CW_TX,             1, 0.6,   0, "Mono",  11, CAIRO_FONT_WEIGHT_NORMAL, CAIRO_FONT_SLANT_NORMAL},
+  {FONT_FLDIGI_RX,         0, 1,     0, "Mono",  11, CAIRO_FONT_WEIGHT_NORMAL, CAIRO_FONT_SLANT_NORMAL},
+  {FONT_FLDIGI_TX,         1, 0.6,   0, "Mono",  11, CAIRO_FONT_WEIGHT_NORMAL, CAIRO_FONT_SLANT_NORMAL},
+  {FONT_TELNET,            0, 1,     0, "Mono",  11, CAIRO_FONT_WEIGHT_NORMAL, CAIRO_FONT_SLANT_NORMAL},
+  {FONT_FT8_QUEUED,        0.5, 0.5, 0.5, "Mono",11, CAIRO_FONT_WEIGHT_NORMAL, CAIRO_FONT_SLANT_NORMAL},
+  {FONT_FT8_REPLY,         1, 0.6,   0, "Mono",  11, CAIRO_FONT_WEIGHT_NORMAL, CAIRO_FONT_SLANT_NORMAL},
 };
 
 static struct encoder enc_a, enc_b;
@@ -1404,9 +1404,31 @@ static int mode_id(const char *mode_str) {
   return -1;
 }
 
+// satisfy forward reference:
+static int user_settings_handler(void* user, const char* section,
+                                 const char* name, const char* value);
+
+static int load_user_settings(void) {
+
+  char *usr_path = "./data/user_settings.ini";
+  char *def_path = "./data/default_settings.ini";
+
+  if (ini_parse(usr_path, user_settings_handler, NULL) >= 0) {
+    return (0);
+  }
+
+  printf("Unable to load ~/sbitx/data/user_settings.ini\n"
+         "Loading default.ini instead\n");
+
+  if (ini_parse(def_path, user_settings_handler, NULL) >= 0) {
+    return (0);
+  }
+
+  return(-1);
+}
+
 static void save_user_settings(int forced) {
   static int last_save_at = 0;
-  char file_path[200];    //dangerous, find the MAX_PATH and replace 200 with it
 
   //attempt to save settings only if it has been 30 seconds since the
   //last time the settings were saved
@@ -1415,14 +1437,12 @@ static void save_user_settings(int forced) {
   if ((now < last_save_at + 30000 ||  !settings_updated) && forced == 0)
     return;
 
-  char *path = getenv("HOME");
-  strcpy(file_path, path);
-  strcat(file_path, "/sbitx/data/user_settings.ini");
+  char *usr_path = "./data/user_settings.ini";
 
-  FILE *f = fopen(file_path, "w");
+  FILE *f = fopen(usr_path, "w");
 
   if (!f) {
-    printf("Unable to save %s : %s\n", file_path, strerror(errno));
+    printf("Unable to save %s : %s\n", usr_path, strerror(errno));
     return;
   }
 
@@ -1545,6 +1565,7 @@ static int user_settings_handler(void* user, const char* section,
 
   return 1;
 }
+
 /* rendering of the fields */
 
 // mod disiplay holds the tx modulation time domain envelope
@@ -2128,18 +2149,18 @@ static void layout_ui() {
   field_move("KBD", screen_width - 47, screen_height - 47, 45, 45);
 
   //now, move the main radio controls to the right
-  field_move("FREQ", x2 - 230, 0, 180, 40);
-  field_move("AUDIO", x2 - 45, 5, 40, 40);
-  field_move("IF", x2 - 45, 50, 40, 40);
-  field_move("DRIVE", x2 - 85, 50, 40, 40);
-  field_move("BW", x2 - 125, 50, 40, 40);
-  field_move("AGC", x2 - 165, 50, 40, 40);
+  field_move("FREQ",  x2 - 230,   0, 180,  40);
+  field_move("AUDIO", x2 -  45,   5,  40,  40);
+  field_move("IF",    x2 -  45,  50,  40,  40);
+  field_move("DRIVE", x2 -  85,  50,  40,  40);
+  field_move("BW",    x2 - 125,  50,  40,  40);
+  field_move("AGC",   x2 - 165,  50,  40,  40);
 
-  field_move("STEP", x2 - 270, 5, 40, 40);
-  field_move("RIT", x2 - 310, 5, 40, 40);
-  field_move("SPLIT", x2 - 310, 50, 40, 40);
-  field_move("VFO", x2 - 270, 50, 40, 40);
-  field_move("SPAN", x2 - 225, 50, 40, 40);
+  field_move("STEP",  x2 - 270,   5,  40,  40);
+  field_move("RIT",   x2 - 310,   5,  40,  40);
+  field_move("SPLIT", x2 - 310,  50,  40,  40);
+  field_move("VFO",   x2 - 270,  50,  40,  40);
+  field_move("SPAN",  x2 - 225,  50,  40,  40);
 
 
   if (!strcmp(field_str("KBD"), "ON")) {
@@ -2154,22 +2175,22 @@ static void layout_ui() {
 
   switch(m_id) {
   case MODE_FT8:
-    field_move("CONSOLE", 5, y1, 350, y2 - y1 - 55);
-    field_move("SPECTRUM", 360, y1, x2 - 365, 100);
-    field_move("WATERFALL", 360, y1 + 100, x2 - 365, y2 - y1 - 155);
-    field_move("ESC", 5, y2 - 50, 40, 45);
-    field_move("F1", 50, y2 - 50, 50, 45);
-    field_move("F2", 100, y2 - 50, 50, 45);
-    field_move("F3", 150, y2 - 50, 50, 45);
-    field_move("F4", 200, y2 - 50, 50, 45);
-    field_move("F5", 250, y2 - 50, 50, 45);
-    field_move("F6", 300, y2 - 50, 50, 45);
-    field_move("F7", 350, y2 - 50, 50, 45);
-    field_move("F8", 400, y2 - 50, 45, 45);
-    field_move("FT8_REPEAT", 450, y2 - 50, 50, 45);
-    field_move("FT8_TX1ST", 500, y2 - 50, 50, 45);
-    field_move("FT8_AUTO", 550, y2 - 50, 50, 45);
-    field_move("TX_PITCH", 600, y2 - 50, 73, 45);
+    field_move("CONSOLE",      5, y1,            350, y2 - y1 -  55);
+    field_move("SPECTRUM",   360, y1,       x2 - 365,           100);
+    field_move("WATERFALL",  360, y1 + 100, x2 - 365, y2 - y1 - 155);
+    field_move("ESC",          5, y2 - 50,        40,            45);
+    field_move("F1",          50, y2 - 50,        50,            45);
+    field_move("F2",         100, y2 - 50,        50,            45);
+    field_move("F3",         150, y2 - 50,        50,            45);
+    field_move("F4",         200, y2 - 50,        50,            45);
+    field_move("F5",         250, y2 - 50,        50,            45);
+    field_move("F6",         300, y2 - 50,        50,            45);
+    field_move("F7",         350, y2 - 50,        50,            45);
+    field_move("F8",         400, y2 - 50,        45,            45);
+    field_move("FT8_REPEAT", 450, y2 - 50,        50,            45);
+    field_move("FT8_TX1ST",  500, y2 - 50,        50,            45);
+    field_move("FT8_AUTO",   550, y2 - 50,        50,            45);
+    field_move("TX_PITCH",   600, y2 - 50,        73,            45);
     field_move("PITCH", 675, y2 - 50, 73, 45);
     break;
 
@@ -2238,6 +2259,7 @@ static void layout_ui() {
 
   invalidate_rect(0, 0, screen_width, screen_height);
 }
+
 void dump_ui() {
   FILE *pf = fopen("main_ui.ini", "w");
 
@@ -4097,16 +4119,16 @@ void ui_init(int argc, char *argv[]) {
   gtk_widget_set_size_request(display_area, 500, 400);
   gtk_container_add( GTK_CONTAINER(window), display_area );
 
-  g_signal_connect( G_OBJECT(window), "destroy", G_CALLBACK( gtk_main_quit ), NULL );
-  g_signal_connect( G_OBJECT(display_area), "draw", G_CALLBACK( on_draw_event ), NULL );
-  g_signal_connect (G_OBJECT (window), "key_press_event", G_CALLBACK (on_key_press), NULL);
-  g_signal_connect (G_OBJECT (window), "key_release_event", G_CALLBACK (on_key_release), NULL);
-  g_signal_connect (G_OBJECT (window), "window_state_event", G_CALLBACK (on_window_state), NULL);
-  g_signal_connect (G_OBJECT(display_area), "button_press_event", G_CALLBACK (on_mouse_press), NULL);
-  g_signal_connect (G_OBJECT(window), "button_release_event", G_CALLBACK (on_mouse_release), NULL);
-  g_signal_connect (G_OBJECT(display_area), "motion_notify_event", G_CALLBACK (on_mouse_move), NULL);
-  g_signal_connect (G_OBJECT(display_area), "scroll_event", G_CALLBACK (on_scroll), NULL);
-  g_signal_connect(G_OBJECT(window), "configure_event", G_CALLBACK(on_resize), NULL);
+  g_signal_connect (G_OBJECT (window),       "destroy",              G_CALLBACK (gtk_main_quit),    NULL);
+  g_signal_connect (G_OBJECT (display_area), "draw",                 G_CALLBACK (on_draw_event),    NULL);
+  g_signal_connect (G_OBJECT (window),       "key_press_event",      G_CALLBACK (on_key_press),     NULL);
+  g_signal_connect (G_OBJECT (window),       "key_release_event",    G_CALLBACK (on_key_release),   NULL);
+  g_signal_connect (G_OBJECT (window),       "window_state_event",   G_CALLBACK (on_window_state),  NULL);
+  g_signal_connect (G_OBJECT (display_area), "button_press_event",   G_CALLBACK (on_mouse_press),   NULL);
+  g_signal_connect (G_OBJECT (window),       "button_release_event", G_CALLBACK (on_mouse_release), NULL);
+  g_signal_connect (G_OBJECT (display_area), "motion_notify_event",  G_CALLBACK (on_mouse_move),    NULL);
+  g_signal_connect (G_OBJECT (display_area), "scroll_event",         G_CALLBACK (on_scroll),        NULL);
+  g_signal_connect (G_OBJECT (window),       "configure_event",      G_CALLBACK (on_resize),        NULL);
 
   /* Ask to receive events the drawing area doesn't normally
    * subscribe to. In particular, we need to ask for the
@@ -4765,21 +4787,7 @@ int main( int argc, char* argv[] ) {
   set_field("r1:gain", "41");
   set_field("r1:volume", "85");
 
-  char full_path[400];	// unwise but mitigated, should find the MAX_PATH and replace 400 with it
-  char *usrpath = "/sbitx/data/user_settings.ini";
-  char *defpath = "/sbitx/data/default_settings.ini";
-  char *home = getenv("HOME");
-
-  strncpy(full_path, home, 398 - sizeof(usrpath));  // trunc path if nec, but don't overrun string
-  strcat (full_path, usrpath);
-
-  if (ini_parse(full_path, user_settings_handler, NULL) < 0) {
-    printf("Unable to load ~/sbitx/data/user_settings.ini\n"
-           "Loading default.ini instead\n");
-    strncpy(full_path, home, 398 - sizeof(defpath));  // trunc path if nec, but don't overrun string
-    strcat (full_path, defpath);
-    ini_parse(full_path, user_settings_handler, NULL);
-  }
+  load_user_settings();
 
   //the logger fields may have an unfinished qso details
   call_wipe();
