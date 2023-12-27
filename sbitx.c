@@ -31,10 +31,11 @@ static int tx_shift = 512;
 #define TX_LINE 4
 #define TX_POWER 27
 #define BAND_SELECT 5
-#define LPF_A 5
-#define LPF_B 6
-#define LPF_C 10
-#define LPF_D 11
+
+#define LPF_A 5     //  A < 30.0 MHz     10m, 12m, 15m
+#define LPF_B 6     //  B < 18.5 MHz     17m, 20m
+#define LPF_C 10    //  C < 10.5 MHz     30m, 40m
+#define LPF_D 11    //  D <  5.5 MHz     80m
 
 #define SBITX_DE (0)
 #define SBITX_V2 (1)
@@ -42,7 +43,7 @@ static int tx_shift = 512;
 static int sbitx_version = SBITX_V2;
 int fwdpower, vswr;
 
-float fft_bins[MAX_BINS]; // spectrum ampltiudes
+float fft_bins[MAX_BINS];      // spectrum ampltiudes
 int spectrum_plot[MAX_BINS];
 
 static fftw_complex *fft_spectrum;
@@ -51,9 +52,9 @@ static float spectrum_window[MAX_BINS];
 static void set_rx1(int frequency);
 static void tr_switch(int tx_on);
 
-static fftw_complex *fft_out;		// holds the incoming samples in freq domain (for rx as well as tx)
-static fftw_complex *fft_in;			// holds the incoming samples in time domain (for rx as well as tx)
-static fftw_complex *fft_m;			// holds previous samples for overlap and discard convolution
+static fftw_complex *fft_out;  // holds the incoming samples in freq domain (for rx as well as tx)
+static fftw_complex *fft_in;   // holds the incoming samples in time domain (for rx as well as tx)
+static fftw_complex *fft_m;    // holds previous samples for overlap and discard convolution
 static fftw_plan plan_fwd;
 
 static int bfo_freq = 40035000;
@@ -128,17 +129,17 @@ void radio_tune_to(u_int32_t f) {
 void fft_init() {
   fflush(stdout);
 
-  fft_m = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * MAX_BINS / 2);
-  fft_in = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * MAX_BINS);
-  fft_out = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * MAX_BINS);
+  fft_m        = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * MAX_BINS / 2);
+  fft_in       = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * MAX_BINS);
+  fft_out      = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * MAX_BINS);
   fft_spectrum = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * MAX_BINS);
 
   memset(fft_spectrum, 0, sizeof(fftw_complex) * MAX_BINS);
-  memset(fft_in, 0, sizeof(fftw_complex) * MAX_BINS);
-  memset(fft_out, 0, sizeof(fftw_complex) * MAX_BINS);
-  memset(fft_m, 0, sizeof(fftw_complex) * MAX_BINS / 2);
+  memset(fft_in,       0, sizeof(fftw_complex) * MAX_BINS);
+  memset(fft_out,      0, sizeof(fftw_complex) * MAX_BINS);
+  memset(fft_m,        0, sizeof(fftw_complex) * MAX_BINS / 2);
 
-  plan_fwd = fftw_plan_dft_1d(MAX_BINS, fft_in, fft_out, FFTW_FORWARD, FFTW_ESTIMATE);
+  plan_fwd      = fftw_plan_dft_1d(MAX_BINS, fft_in, fft_out,      FFTW_FORWARD, FFTW_ESTIMATE);
   plan_spectrum = fftw_plan_dft_1d(MAX_BINS, fft_in, fft_spectrum, FFTW_FORWARD, FFTW_ESTIMATE);
 
   //zero up the previous 'M' bins
@@ -152,10 +153,10 @@ void fft_init() {
 
 void fft_reset_m_bins() {
   //zero up the previous 'M' bins
-  memset(fft_in, 0, sizeof(fftw_complex) * MAX_BINS);
-  memset(fft_out, 0, sizeof(fftw_complex) * MAX_BINS);
-  memset(fft_m, 0, sizeof(fftw_complex) * MAX_BINS / 2);
-  memset(fft_spectrum, 0, sizeof(fftw_complex) * MAX_BINS);
+  memset(fft_in,            0, sizeof(fftw_complex) * MAX_BINS);
+  memset(fft_out,           0, sizeof(fftw_complex) * MAX_BINS);
+  memset(fft_m,             0, sizeof(fftw_complex) * MAX_BINS / 2);
+  memset(fft_spectrum,      0, sizeof(fftw_complex) * MAX_BINS);
   memset(tx_list->fft_time, 0, sizeof(fftw_complex) * MAX_BINS);
   memset(tx_list->fft_freq, 0, sizeof(fftw_complex) * MAX_BINS);
 }
@@ -195,13 +196,14 @@ void spectrum_update() {
   //it can be optimized. leaving it here just in case
   //someone wants to try I Q channels
   //in hardware
+  // for (int i = 0; i < MAX_BINS; i++){
 
   // this has been hand optimized to lower
-  //the inordinate cpu usage
+  // the inordinate cpu usage
   for (int i = 1269; i < 1803; i++) {
 
-    fft_bins[i] = ((1.0 - spectrum_speed) * fft_bins[i]) +
-                  (spectrum_speed * cabs(fft_spectrum[i]));
+    fft_bins[i] = ((1.0 - spectrum_speed) *      fft_bins    [i]) +
+                   (      spectrum_speed  * cabs(fft_spectrum[i]));
 
     int y = power2dB(cnrmf(fft_bins[i]));
     spectrum_plot[i] = y;
@@ -219,24 +221,27 @@ int remote_audio_output(int16_t *samples) {
 }
 
 static int prev_lpf = -1;
+
 void set_lpf_40mhz(int frequency) {
   int lpf = 0;
 
-  if (frequency < 5500000)
-    lpf = LPF_D;
-  else if (frequency < 10500000)
-    lpf = LPF_C;
-  else if (frequency < 18500000)
+  lpf = LPF_A;               // ( 5) A < 30.0 MHz     10m, 12m, 15m
+
+  if (frequency < 18500000)  // ( 6) B < 18.5 MHz     17m, 20m
     lpf = LPF_B;
-  else if (frequency < 30000000)
-    lpf = LPF_A;
+
+  if (frequency < 10500000)  // (10) C < 10.5 MHz     30m, 40m
+    lpf = LPF_C;
+
+  if (frequency <  5500000)  // (11) D <  5.5 MHz     80m
+    lpf = LPF_D;
 
   if (lpf == prev_lpf) {
     //puts("LPF not changed");
     return;
   }
 
-  //printf("##################Setting LPF to %d\n", lpf);
+  printf("##################Setting LPF to %d\n", lpf);
 
   digitalWrite(LPF_A, LOW);
   digitalWrite(LPF_B, LOW);
@@ -283,20 +288,20 @@ FILE *wav_start_writing(const char* path)
   FILE* f = fopen(path, "w");
 
   // NOTE: works only on little-endian architecture
-  fwrite(chunkID, sizeof(chunkID), 1, f);
-  fwrite(&chunkSize, sizeof(chunkSize), 1, f);
-  fwrite(format, sizeof(format), 1, f);
+  fwrite(chunkID,        sizeof(chunkID),       1, f);
+  fwrite(&chunkSize,     sizeof(chunkSize),     1, f);
+  fwrite(format,         sizeof(format),        1, f);
 
-  fwrite(subChunk1ID, sizeof(subChunk1ID), 1, f);
+  fwrite(subChunk1ID,    sizeof(subChunk1ID),   1, f);
   fwrite(&subChunk1Size, sizeof(subChunk1Size), 1, f);
-  fwrite(&audioFormat, sizeof(audioFormat), 1, f);
-  fwrite(&numChannels, sizeof(numChannels), 1, f);
-  fwrite(&sampleRate, sizeof(sampleRate), 1, f);
-  fwrite(&byteRate, sizeof(byteRate), 1, f);
-  fwrite(&blockAlign, sizeof(blockAlign), 1, f);
+  fwrite(&audioFormat,   sizeof(audioFormat),   1, f);
+  fwrite(&numChannels,   sizeof(numChannels),   1, f);
+  fwrite(&sampleRate,    sizeof(sampleRate),    1, f);
+  fwrite(&byteRate,      sizeof(byteRate),      1, f);
+  fwrite(&blockAlign,    sizeof(blockAlign),    1, f);
   fwrite(&bitsPerSample, sizeof(bitsPerSample), 1, f);
 
-  fwrite(subChunk2ID, sizeof(subChunk2ID), 1, f);
+  fwrite(subChunk2ID,    sizeof(subChunk2ID),   1, f);
   fwrite(&subChunk2Size, sizeof(subChunk2Size), 1, f);
 
   return f;
@@ -328,8 +333,8 @@ In this demo, we read and equivalent block from the file instead of processing f
 the input I and Q signals.
 */
 
-int32_t in_i[MAX_BINS];
-int32_t in_q[MAX_BINS];
+int32_t in_i [MAX_BINS];
+int32_t in_q [MAX_BINS];
 int32_t	out_i[MAX_BINS];
 int32_t out_q[MAX_BINS];
 short is_ready = 0;
@@ -349,8 +354,8 @@ struct rx *add_tx(int frequency, short mode, int bpf_low, int bpf_high) {
   //the tuning can go up and down only by 22 KHz from the center_freq
 
   struct rx *r = malloc(sizeof(struct rx));
-  r->low_hz = bpf_low;
-  r->high_hz = bpf_high;
+  r->low_hz    = bpf_low;
+  r->high_hz   = bpf_high;
   r->tuned_bin = 512;
 
   //create fft complex arrays to convert the frequency back to time
@@ -359,8 +364,8 @@ struct rx *add_tx(int frequency, short mode, int bpf_low, int bpf_high) {
   r->plan_rev = fftw_plan_dft_1d(MAX_BINS, r->fft_freq, r->fft_time, FFTW_BACKWARD, FFTW_ESTIMATE);
 
   r->output = 0;
-  r->next = NULL;
-  r->mode = mode;
+  r->next   = NULL;
+  r->mode   = mode;
 
   r->filter = filter_new(1024, 1025);
   filter_tune(r->filter, (1.0 * bpf_low) / 96000.0, (1.0 * bpf_high) / 96000.0, 5);
@@ -390,10 +395,10 @@ struct rx *add_rx(int frequency, short mode, int bpf_low, int bpf_high) {
   //the tuning can go up and down only by 22 KHz from the center_freq
 
   struct rx *r = malloc(sizeof(struct rx));
-  r->low_hz = bpf_low;
-  r->high_hz = bpf_high;
+  r->low_hz    = bpf_low;
+  r->high_hz   = bpf_high;
   r->tuned_bin = 512;
-  r->agc_gain = 0.0;
+  r->agc_gain  = 0.0;
 
   //create fft complex arrays to convert the frequency back to time
   r->fft_time = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * MAX_BINS);
@@ -401,8 +406,8 @@ struct rx *add_rx(int frequency, short mode, int bpf_low, int bpf_high) {
   r->plan_rev = fftw_plan_dft_1d(MAX_BINS, r->fft_freq, r->fft_time, FFTW_BACKWARD, FFTW_ESTIMATE);
 
   r->output = 0;
-  r->next = NULL;
-  r->mode = mode;
+  r->next   = NULL;
+  r->mode   = mode;
 
   r->filter = filter_new(1024, 1025);
   filter_tune(r->filter, (1.0 * bpf_low) / 96000.0, (1.0 * bpf_high) / 96000.0, 5);
@@ -444,7 +449,7 @@ double agc2(struct rx *r) {
     return 10000000;
   }
 
-  //find the peak signal amplitude
+  // find the peak signal amplitude
   signal_strength = 0.0;
 
   for (i = 0; i < MAX_BINS / 2; i++) {
@@ -702,6 +707,7 @@ void tx_process(
   int j = 0;
 
   //double max = -10.0, min = 10.0;
+
   //gather the samples into a time domain array
   for (i = MAX_BINS / 2; i < MAX_BINS; i++) {
 
@@ -725,11 +731,11 @@ void tx_process(
     }
 
     /*
-    		//to measure the voice peaks, used to measure voice_clip_level
-    		if (max < i_sample)
-    			max = i_sample;
-    		if (min > i_sample)
-    			min = i_sample;
+    //to measure the voice peaks, used to measure voice_clip_level
+    if (max < i_sample)
+      max = i_sample;
+    if (min > i_sample)
+      min = i_sample;
     */
     //don't echo the voice modes
     if (r->mode == MODE_USB || r->mode == MODE_LSB || r->mode == MODE_AM
@@ -742,8 +748,8 @@ void tx_process(
 
     j++;
 
-    __real__ fft_m[m] = i_sample;
-    __imag__ fft_m[m] = q_sample;
+    __real__ fft_m[m]   = i_sample;
+    __imag__ fft_m[m]   = q_sample;
 
     __real__ fft_in[i]  = i_sample;
     __imag__ fft_in[i]  = q_sample;
@@ -924,12 +930,12 @@ static void read_hw_ini() {
   hw_init_index = 0;
   char directory[PATH_MAX];
   char *path = getenv("HOME");
-  strcpy(directory, path);
+  strncpy(directory, path, sizeof(directory)-1);
   strcat(directory, "/sbitx/data/hw_settings.ini");
 
   if (ini_parse(directory, hw_settings_handler, NULL) < 0) {
     printf("Unable to load ~/sbitx/data/hw_settings.ini\nLoading default_hw_settings.ini instead\n");
-    strcpy(directory, path);
+    strncpy(directory, path, sizeof(directory)-1);
     strcat(directory, "/sbitx/data/default_hw_settings.ini");
     ini_parse(directory, hw_settings_handler, NULL);
   }
@@ -1010,7 +1016,7 @@ static void save_hw_settings() {
   char file_path[200];	//dangerous, find the MAX_PATH and replace 200 with it
 
   char *path = getenv("HOME");
-  strcpy(file_path, path);
+  strncpy(file_path, path, sizeof(file_path)-1);
   strcat(file_path, "/sbitx/data/hw_settings.ini");
 
   FILE *f = fopen(file_path, "w");
@@ -1250,7 +1256,7 @@ void sdr_request(char *request, char *response) {
 
   strncpy(cmd, request, n);
   cmd[n] = 0;
-  strcpy(value, request + n + 1);
+  strncpy(value, request + n + 1, sizeof(value)-1);
 
   if (!strcmp(cmd, "stat:tx")) {
     if (in_tx)

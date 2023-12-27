@@ -841,7 +841,7 @@ static int set_field(char *id, const char *value) {
     if (debug)
       printf("field selection [%s]\n", f->selection);
 
-    strcpy(b, f->selection);
+    strncpy(b, f->selection, sizeof(b)-1);
     p = strtok(b, "/");
 
     if (debug)
@@ -1258,7 +1258,7 @@ static int do_console(struct field * f, cairo_t *gfx, int event, int a, int b, i
   case GDK_BUTTON_RELEASE:
     if (!strcmp(get_field("r1:mode")->value, "FT8")) {
       char ft8_message[100];
-      strcpy(ft8_message, console_stream[console_selected_line].text);
+      strncpy(ft8_message, console_stream[console_selected_line].text, sizeof(ft8_message)-1);
       ft8_process(ft8_message, FT8_START_QSO);
     }
 
@@ -1319,7 +1319,7 @@ static void draw_field(GtkWidget * widget, cairo_t *gfx, struct field * f) {
         this_line[console_cols] = 0;
       }
       else
-        strcpy(this_line, f->value + line_start);
+        strncpy(this_line, f->value + line_start, sizeof(this_line)-1);
 
       draw_text(gfx, f->x + 2, y, this_line, f->font_index);
       text_line_width = measure_text(gfx, this_line, f->font_index);
@@ -1501,14 +1501,14 @@ static int user_settings_handler(void* user, const char* section,
   char cmd[1000];
   char new_value[200];
 
-  strcpy(new_value, value);
+  strncpy(new_value, value, sizeof(new_value)-1);
 
   if (!strcmp(section, "r1")) {
     sprintf(cmd, "%s:%s", section, name);
     set_field(cmd, new_value);
   }
   else if (!strcmp(section, "tx")) {
-    strcpy(cmd, name);
+    strncpy(cmd, name, sizeof(cmd)-1);
     set_field(cmd, new_value);
   }
   else if (!strncmp(cmd, "#kbd", 4)) {
@@ -1965,7 +1965,7 @@ static char* freq_with_separators(char* freq_str) {
   f_hz = freq - (f_mhz * 1000000) - (f_khz * 1000);
 
   sprintf(temp_string, "%d", f_mhz);
-  strcpy(return_string, temp_string);
+  strncpy(return_string, temp_string, sizeof(return_string)-1);
   strcat(return_string, ".");
 
   if (f_khz < 100) {
@@ -2030,14 +2030,14 @@ void draw_dial(struct field *f, cairo_t *gfx) {
   }
   else if (!strcmp(split->value, "ON")) {
     if (!in_tx) {
-      strcpy(temp_str, vfo_b->value);
+      strncpy(temp_str, vfo_b->value, sizeof(temp_str)-1);
       sprintf(buff, "TX:%s", freq_with_separators(temp_str));
       draw_text(gfx, f->x + 5, f->y + 1, buff, FONT_LARGE_FIELD);
       sprintf(buff, "RX:%s", freq_with_separators(f->value));
       draw_text(gfx, f->x + 5, f->y + 15, buff, FONT_LARGE_VALUE);
     }
     else {
-      strcpy(temp_str, vfo_b->value);
+      strncpy(temp_str, vfo_b->value, sizeof(temp_str)-1);
       sprintf(buff, "TX:%s", freq_with_separators(temp_str));
       draw_text(gfx, f->x + 5, f->y + 15, buff, FONT_LARGE_VALUE);
       sprintf(buff, "RX:%d", atoi(f->value) + atoi(rit_delta->value));
@@ -2046,13 +2046,13 @@ void draw_dial(struct field *f, cairo_t *gfx) {
   }
   else if (!strcmp(vfo->value, "A")) {
     if (!in_tx) {
-      strcpy(temp_str, vfo_b->value);
+      strncpy(temp_str, vfo_b->value, sizeof(temp_str)-1);
       sprintf(buff, "B:%s", freq_with_separators(temp_str));
       draw_text(gfx, f->x + 5, f->y + 1, buff, FONT_LARGE_FIELD);
       sprintf(buff, "A:%s", freq_with_separators(f->value));
       draw_text(gfx, f->x + 5, f->y + 15, buff, FONT_LARGE_VALUE);
     } else {
-      strcpy(temp_str, vfo_b->value);
+      strncpy(temp_str, vfo_b->value, sizeof(temp_str)-1);
       sprintf(buff, "B:%s", freq_with_separators(temp_str));
       draw_text(gfx, f->x + 5, f->y + 1, buff, FONT_LARGE_FIELD);
       sprintf(buff, "TX:%s", freq_with_separators(f->value));
@@ -2061,14 +2061,14 @@ void draw_dial(struct field *f, cairo_t *gfx) {
   }
   else { /// VFO B is active
     if (!in_tx) {
-      strcpy(temp_str, vfo_a->value);
+      strncpy(temp_str, vfo_a->value, sizeof(temp_str)-1);
       //sprintf(temp_str, "%d", vfo_a_freq);
       sprintf(buff, "A:%s", freq_with_separators(temp_str));
       draw_text(gfx, f->x + 5, f->y + 1, buff, FONT_LARGE_FIELD);
       sprintf(buff, "B:%s", freq_with_separators(f->value));
       draw_text(gfx, f->x + 5, f->y + 15, buff, FONT_LARGE_VALUE);
     } else {
-      strcpy(temp_str, vfo_a->value);
+      strncpy(temp_str, vfo_a->value, sizeof(temp_str)-1);
       //sprintf(temp_str, "%d", vfo_a_freq);
       sprintf(buff, "A:%s", freq_with_separators(temp_str));
       draw_text(gfx, f->x + 5, f->y + 1, buff, FONT_LARGE_FIELD);
@@ -2368,7 +2368,7 @@ static void edit_field(struct field *f, int action) {
   else if (f->value_type == FIELD_SELECTION) {
     char *p, *prev, b[100], *first, *last;
     // get the first and last selections
-    strcpy(b, f->selection);
+    strncpy(b, f->selection, sizeof(b)-1);
     p = strtok(b, "/");
     first = p;
 
@@ -2379,7 +2379,7 @@ static void edit_field(struct field *f, int action) {
 
     //search the current text in the selection
     prev = NULL;
-    strcpy(b, f->selection);
+    strncpy(b, f->selection, sizeof(b)-1);
     p = strtok(b, "/");
 
     while(p) {
@@ -2420,7 +2420,7 @@ static void edit_field(struct field *f, int action) {
   else if (f->value_type == FIELD_TOGGLE) {
     char *p, b[100];
     //search the current text in the selection
-    strcpy(b, f->selection);
+    strncpy(b, f->selection, sizeof(b)-1);
     p = strtok(b, "/");
 
     while(p) {
@@ -3052,7 +3052,7 @@ int do_macro(struct field *f, cairo_t *gfx, int event, int a, int b, int c) {
   char buff[256], *mode;
   char contact_callsign[100];
 
-  strcpy(contact_callsign, get_field("#contact_callsign")->value);
+  strncpy(contact_callsign, get_field("#contact_callsign")->value, sizeof(contact_callsign)-1);
 
   if(event == GDK_BUTTON_PRESS) {
     int fn_key = atoi(f->cmd + 3); // skip past the '#mf' and read the function key number
@@ -3134,7 +3134,7 @@ int do_record(struct field *f, cairo_t *gfx, int event, int a, int b, int c) {
       sprintf(duration, "%d:%02d", minutes, seconds);
     }
     else
-      strcpy(duration, "OFF");
+      strncpy(duration, "OFF", sizeof(duration)-1);
 
     width = measure_text(gfx, duration, FONT_FIELD_VALUE);
     draw_text(gfx, f->x + f->width / 2 - width / 2, label_y, duration, f->font_index);
@@ -4330,7 +4330,7 @@ void meter_calibrate() {
 void do_control_action(char *cmd) {
   char request[1000], response[1000];
 
-  strcpy(request, cmd);			//don't mangle the original, thank you
+  strncpy(request, cmd, sizeof(request)-1);			//don't mangle the original, thank you
 
   if (!strcmp(request, "CLOSE")) {
     gtk_window_iconify(GTK_WINDOW(window));

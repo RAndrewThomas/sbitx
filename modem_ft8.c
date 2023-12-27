@@ -577,7 +577,7 @@ void ft8_tx(char *message, int freq) {
   time_t	rawtime = time_sbitx();
   struct tm *t = gmtime(&rawtime);
 
-  strcpy(ft8_tx_text, message);
+  strncpy(ft8_tx_text, message, sizeof(ft8_tx_text)-1);
 
   ft8_pitch = freq;
   sprintf(buff, "%02d%02d%02d  TX +00 %04d ~  %s\n", t->tm_hour, t->tm_min, t->tm_sec, ft8_pitch, ft8_tx_text);
@@ -732,7 +732,7 @@ int ft8_message_tokenize(char *message) {
 
   if (!p) return -1;
 
-  strcpy(signal_strength, p);
+  strncpy(signal_strength, p, sizeof(signal_strength)-1);
 
   p = strtok(NULL, " \r\n");
 
@@ -753,23 +753,23 @@ int ft8_message_tokenize(char *message) {
 
   if (!p) return -1;
 
-  strcpy(m1, p);
+  strncpy(m1, p, sizeof(m1)-1);
 
   p = strtok(NULL, " \r\n");
 
   if (!p) return -1;
 
-  strcpy(m2, p);
+  strncpy(m2, p, sizeof(m2)-1);
 
   p = strtok(NULL, " \r\n");
 
   if (p) {
-    strcpy(m3, p);
+    strncpy(m3, p, sizeof(m3)-1);
 
     p = strtok(NULL, " \r\n");
 
     if (p) {
-      strcpy(m4, p);
+      strncpy(m4, p, sizeof(m4)-1);
     }
     else
       m4[0] = 0;
@@ -873,7 +873,7 @@ void ft8_process(char *message, int operation) {
     auto_respond = 1;
 
   //use only the first 4 letters of the grid
-  strcpy(mygrid, field_str("MYGRID"));
+  strncpy(mygrid, field_str("MYGRID"), sizeof(mygrid)-1);
   mygrid[4] = 0;
 
   //we can start call in reply to a cq, cq dx or anyone else ending the call

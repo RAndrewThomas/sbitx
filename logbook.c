@@ -56,7 +56,7 @@ void logbook_query(char *query, int from_id, char *result_file) {
       sprintf(statement, "select * from logbook "
               "where callsign_recv LIKE '%s%%' ", query);
     else
-      strcpy(statement, "select * from logbook ");
+      strncpy(statement, "select * from logbook ", sizeof(statement)-1);
   }
   //latest QSOs after from_id (top of the log)
   else {
@@ -87,7 +87,7 @@ void logbook_query(char *query, int from_id, char *result_file) {
       switch (sqlite3_column_type(stmt, i))
       {
       case (SQLITE3_TEXT):
-        strcpy(param, (char *)sqlite3_column_text(stmt, i));
+        strncpy(param, (char *)sqlite3_column_text(stmt, i), sizeof(param)-1);
         break;
 
       case (SQLITE_INTEGER):
@@ -184,16 +184,16 @@ void import_logs(char *filename) {
 
   while(fgets(entry_text, sizeof(entry_text), pf)) {
     char *p = strtok(entry_text, "\t ");
-    strcpy(freq, p);
-    strcpy(mode, strtok(NULL, "\t "));
-    strcpy(date_str, strtok(NULL, "\t "));
-    strcpy(time_str, strtok(NULL, "\t "));
-    strcpy(mycall, strtok(NULL, "\t "));
-    strcpy(rst_sent, strtok(NULL, "\t "));
-    strcpy(exchange_sent, strtok(NULL, "\t "));
-    strcpy(contact_callsign, strtok(NULL, "\t "));
-    strcpy(rst_recv, strtok(NULL, "\t "));
-    strcpy(exchange_recv, strtok(NULL, "\t\n"));
+    strncpy(freq,             p,                    sizeof(freq)-1);
+    strncpy(mode,             strtok(NULL, "\t "),  sizeof(mode)-1);
+    strncpy(date_str,         strtok(NULL, "\t "),  sizeof(date_str)-1);
+    strncpy(time_str,         strtok(NULL, "\t "),  sizeof(time_str)-1);
+    strncpy(mycall,           strtok(NULL, "\t "),  sizeof(mycall)-1);
+    strncpy(rst_sent,         strtok(NULL, "\t "),  sizeof(rst_sent)-1);
+    strncpy(exchange_sent,    strtok(NULL, "\t "),  sizeof(exchange_sent)-1);
+    strncpy(contact_callsign, strtok(NULL, "\t "),  sizeof(contact_callsign)-1);
+    strncpy(rst_recv,         strtok(NULL, "\t "),  sizeof(rst_recv)-1);
+    strncpy(exchange_recv,    strtok(NULL, "\t\n"), sizeof(exchange_recv)-1);
     sprintf(statement,
             "INSERT INTO logbook (freq, mode, qso_date, qso_time, callsign_sent,"
             "rst_sent, exch_sent, callsign_recv, rst_recv, exch_recv) "

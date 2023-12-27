@@ -263,7 +263,7 @@ void telnet_open(char *server) {
     telnet_sock = 0;
   }
 
-  strcpy(telnet_server_name, server);
+  strncpy(telnet_server_name, server, sizeof(telnet_server_name)-1);
   pthread_create( &telnet_thread, NULL, telnet_thread_function,
                   (void*)telnet_server_name);
 }

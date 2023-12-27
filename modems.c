@@ -353,7 +353,7 @@ static void fldigi_set_mode(char *mode) {
   if (strcmp(fldigi_mode, mode)) {
     if(fldigi_call("modem.set_by_name", mode, buffer) == 0) {
       fldigi_retry_at = millis() + 2000;
-      strcpy(fldigi_mode, mode);
+      strncpy(fldigi_mode, mode, sizeof(fldigi_mode)-1);
     }
   }
 }

@@ -39,7 +39,7 @@ void macro_list(char *output) {
   char full_path[200];	//dangerous, find the MAX_PATH and replace 200 with it
 
   char *home_path = getenv("HOME");
-  strcpy(full_path, home_path);
+  strncpy(full_path, home_path, sizeof(full_path)-1);
   strcat(full_path, "/sbitx/web/");
   DIR *d = opendir(full_path);
   struct dirent *dir;
@@ -88,7 +88,7 @@ int  macro_load(const char *filename, char *output) {
   char full_path[200];	//dangerous, find the MAX_PATH and replace 200 with it
 
   char *home_path = getenv("HOME");
-  strcpy(full_path, home_path);
+  strncpy(full_path, home_path, sizeof(full_path)-1);
   strcat(full_path, "/sbitx/web/");
   strcat(full_path, filename);
   strcat(full_path, ".mc");

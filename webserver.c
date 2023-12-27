@@ -182,7 +182,7 @@ static void web_despatcher(struct mg_connection *c, struct mg_ws_message *wm) {
     if (value)
       sprintf(buff, "%s %s", field, value);
     else
-      strcpy(buff, field);
+      strncpy(buff, field, sizeof(buff)-1);
 
     remote_execute(buff);
     get_updates(c, 0);
@@ -243,7 +243,7 @@ static pthread_t webserver_thread;
 
 void webserver_start() {
   char *path = getenv("HOME");
-  strcpy(s_web_root, path);
+  strncpy(s_web_root, path, sizeof(s_web_root)-1);
   strcat(s_web_root, "/sbitx/web");
 
   logbook_open();

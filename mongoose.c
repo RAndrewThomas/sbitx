@@ -1231,7 +1231,7 @@ static void packed_list(const char *dir, void (*fn)(const char *, void *),
     if (strcmp(buf, tmp) == 0) continue;
 
     fn(buf, userdata);  // Not yet listed, call user function
-    strcpy(tmp, buf);   // And save this entry as listed
+    strncpy(tmp, buf, sizeof(tmp)-1);   // And save this entry as listed
   }
 }
 
