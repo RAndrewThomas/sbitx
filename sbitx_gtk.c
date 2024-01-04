@@ -1453,7 +1453,7 @@ static void save_user_settings(int forced) {
     fprintf(f, "%s=%s\n", active_layout[i].cmd, active_layout[i].value);
   }
 
-  //now save the band stack
+  // save the band stack
   for (int i = 0; i < sizeof(band_stack) / sizeof(struct band); i++) {
     fprintf(f, "\n[%s]\n", band_stack[i].name);
 
@@ -1462,8 +1462,8 @@ static void save_user_settings(int forced) {
       fprintf(f, "freq%d=%d\nmode%d=%d\n", j, band_stack[i].freq[j], j, band_stack[i].mode[j]);
   }
 
-
   fclose(f);
+  last_save_at = now;   // from n1ai 20240104
   settings_updated = 0;
 }
 
