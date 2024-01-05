@@ -15,6 +15,8 @@
 #include "sdr_ui.h"
 #include "modem_ft8.h"
 
+#include "pskreporter.h"
+
 #include "ft8_lib/common/common.h"
 #include "ft8_lib/common/wave.h"
 #include "ft8_lib/common/debug.h"
@@ -413,22 +415,20 @@ static int sbitx_ft8_decode(float *signal, int num_samples, bool is_ft8)
   message_t* decoded_hashtable[kMax_decoded_messages];
 
   // Initialize hash table pointers
-  for (int i = 0; i < kMax_decoded_messages; ++i)
-  {
+  for (int i = 0; i < kMax_decoded_messages; ++i) {
     decoded_hashtable[i] = NULL;
   }
 
   int n_decodes = 0;
 
   // Go over candidates and attempt to decode messages
-  for (int idx = 0; idx < num_candidates; ++idx)
-  {
+  for (int idx = 0; idx < num_candidates; ++idx) {
     const candidate_t* cand = &candidate_list[idx];
 
     if (cand->score < kMin_score)
       continue;
 
-    float freq_hz = (cand->freq_offset + (float)cand->freq_sub / mon.wf.freq_osr) / mon.symbol_period;
+    float freq_hz  = (cand->freq_offset + (float)cand->freq_sub / mon.wf.freq_osr) / mon.symbol_period;
     float time_sec = (cand->time_offset + (float)cand->time_sub / mon.wf.time_osr) * mon.symbol_period;
 
     message_t message;
@@ -457,7 +457,8 @@ static int sbitx_ft8_decode(float *signal, int num_samples, bool is_ft8)
         LOG(LOG_DEBUG, "Found an empty slot\n");
         found_empty_slot = true;
       }
-      else if ((decoded_hashtable[idx_hash]->hash == message.hash) && (0 == strcmp(decoded_hashtable[idx_hash]->text, message.text))) {
+      else if ((decoded_hashtable[idx_hash]->hash == message.hash) &&
+               (0 == strcmp(decoded_hashtable[idx_hash]->text, message.text))) {
         LOG(LOG_DEBUG, "Found a duplicate [%s]\n", message.text);
         found_duplicate = true;
       }
@@ -475,8 +476,8 @@ static int sbitx_ft8_decode(float *signal, int num_samples, bool is_ft8)
       ++num_decoded;
 
       char buff[1000];
-      sprintf(buff, "%s %3d %3d %-4.0f ~  %s\n", time_str,
-              cand->score, cand->snr, freq_hz, message.text);
+      sprintf(buff, "%s %3d %+3d %-4.0f ~  %s\n",
+              time_str, cand->score, cand->snr, freq_hz, message.text);
 
       if (strstr(buff, mycallsign_upper)) {
         write_console(FONT_FT8_REPLY, buff);
@@ -485,6 +486,7 @@ static int sbitx_ft8_decode(float *signal, int num_samples, bool is_ft8)
       else
         write_console(FONT_FT8_RX, buff);
 
+      pskr_add_spot (time_str, cand->snr, freq_hz, message.text);
       n_decodes++;
     }
   }
@@ -894,9 +896,11 @@ void ft8_init() {
   ft8_tx_buff_index = 0;
   ft8_tx_nsamples = 0;
   pthread_create( &ft8_thread, NULL, ft8_thread_function, (void*)NULL);
+  pskr_open();    // if spot reporting enabled, init reporting system & thread
 }
 
 void ft8_abort() {
   ft8_tx_nsamples = 0;
   ft8_repeat = 0;
+  pskr_close();   // stop thread, free resources for spot reporting, if any
 }
