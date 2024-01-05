@@ -1473,7 +1473,7 @@ void enter_qso() {
   const char *rst_received = field_str("RECV");
 
   // skip empty or half filled log entry
-  if (strlen(callsign) < 3 || strlen(rst_sent) < 2 || strlen(rst_received) < 2) {
+  if (strlen(callsign) < 3 || strlen(rst_sent) < 1 || strlen(rst_received) < 1) {
     printf("log entry is empty [%s], [%s], [%s], no log created\n", callsign, rst_sent, rst_received);
     return;
   }
