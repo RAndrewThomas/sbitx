@@ -1443,6 +1443,7 @@ static void save_user_settings(int forced) {
 
   if (!f) {
     printf("Unable to save %s : %s\n", usr_path, strerror(errno));
+    settings_updated = 0;
     return;
   }
 
@@ -1511,7 +1512,7 @@ static int user_settings_handler(void* user, const char* section,
     strncpy(cmd, name, sizeof(cmd)-1);
     set_field(cmd, new_value);
   }
-  else if (!strncmp(cmd, "#kbd", 4)) {
+  else if (!strncmp(section, "#kbd", 4)) {
     return 1; //skip the keyboard values
   }
   // if it is an empty section
